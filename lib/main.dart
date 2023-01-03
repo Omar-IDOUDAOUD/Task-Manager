@@ -22,7 +22,7 @@ class TaskManger extends StatelessWidget {
           unselectedLabelColor: CstColors.la,
           labelColor: Colors.black,
           labelStyle: const TextStyle(
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w600,
             fontSize: 15,
             fontFamily: "Poppins",
           ),
@@ -36,29 +36,26 @@ class TaskManger extends StatelessWidget {
           brightness: Brightness.light,
           background: CstColors.le,
           primary: Colors.black,
-          secondary:  CstColors.lc,
+          secondary: CstColors.lc,
           tertiary: CstColors.ld,
           surface: CstColors.lb,
         ),
-        textTheme: const TextTheme(
+        textTheme:const TextTheme(
           // headlines
-          headline1: TextStyle(
+          headline1:  TextStyle(
+              fontFamily: "Poppins", fontSize: 8, fontWeight: FontWeight.w500),
+          headline2:  TextStyle(
+              fontFamily: "Poppins", fontSize: 10, fontWeight: FontWeight.w500),
+          headline3:  TextStyle(
+              fontFamily: "Poppins", fontSize: 12, fontWeight: FontWeight.w500),
+          headline4:  TextStyle(
+              fontFamily: "Poppins", fontSize: 13, fontWeight: FontWeight.w500),
+          headline6:  TextStyle(
             fontFamily: "Poppins",
-            fontSize: 8,
+            fontSize: 25,
+            fontWeight: FontWeight.w400,
+            color: Colors.black,
           ),
-          headline2: TextStyle(
-            fontFamily: "Poppins",
-            fontSize: 10,
-          ),
-          headline3: TextStyle(
-            fontFamily: "Poppins",
-            fontSize: 12,
-          ),
-          headline4: TextStyle(
-            fontFamily: "Poppins",
-            fontSize: 13,
-          ),
-       
         ),
       ),
       home: const Home(),
