@@ -10,6 +10,14 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> with TickerProviderStateMixin {
+  late final TabController _tabController;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    _tabController = TabController(length: 3, vsync: this);
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -17,10 +25,10 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
       child: Scaffold(
         extendBodyBehindAppBar: true,
         appBar: TabBar(
-          controller: TabController(length: 3, vsync: this),
+          controller: _tabController,
           overlayColor: MaterialStateProperty.all(Colors.transparent),
           indicatorSize: TabBarIndicatorSize.label,
-          indicatorWeight: 1.5,
+          indicatorWeight: 1,
           tabs: const [
             Tab(
               child: Text(
@@ -49,13 +57,20 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
             ),
             Divider(
               color: Get.theme.colorScheme.surface,
-              thickness: 0,
-              height: 1.5,
+              thickness: 1,
+              height: 1,
             ),
             Expanded(
               child: ColoredBox(
                 color: Get.theme.colorScheme.background,
-                child: TasksTab(),
+                child: TabBarView(
+                  controller: _tabController,
+                  children: const [
+                    TasksTab(),
+                    ColoredBox(color: Colors.yellow),
+                    ColoredBox(color: Colors.blue)
+                  ],
+                ),
               ),
             )
           ],
