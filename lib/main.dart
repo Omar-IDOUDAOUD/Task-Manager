@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:task_manager/core/constants/colors.dart';
 import 'package:task_manager/view/home/home.dart';
@@ -16,7 +17,9 @@ class TaskManger extends StatelessWidget {
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        appBarTheme: AppBarTheme(),
+        appBarTheme: const AppBarTheme(
+          systemOverlayStyle:  SystemUiOverlayStyle.light,
+        ),
         indicatorColor: Colors.black,
         tabBarTheme: TabBarTheme(
           unselectedLabelColor: CstColors.la,
@@ -32,6 +35,7 @@ class TaskManger extends StatelessWidget {
             fontFamily: "Poppins",
           ),
         ),
+        scaffoldBackgroundColor: Colors.white,
         colorScheme: ColorScheme.light(
           brightness: Brightness.light,
           background: CstColors.le,
@@ -40,17 +44,17 @@ class TaskManger extends StatelessWidget {
           tertiary: CstColors.ld,
           surface: CstColors.lb,
         ),
-        textTheme:const TextTheme(
+        textTheme: const TextTheme(
           // headlines
-          headline1:  TextStyle(
+          headline1: TextStyle(
               fontFamily: "Poppins", fontSize: 8, fontWeight: FontWeight.w500),
-          headline2:  TextStyle(
+          headline2: TextStyle(
               fontFamily: "Poppins", fontSize: 10, fontWeight: FontWeight.w500),
-          headline3:  TextStyle(
+          headline3: TextStyle(
               fontFamily: "Poppins", fontSize: 12, fontWeight: FontWeight.w500),
-          headline4:  TextStyle(
+          headline4: TextStyle(
               fontFamily: "Poppins", fontSize: 13, fontWeight: FontWeight.w500),
-          headline6:  TextStyle(
+          headline6: TextStyle(
             fontFamily: "Poppins",
             fontSize: 25,
             fontWeight: FontWeight.w400,

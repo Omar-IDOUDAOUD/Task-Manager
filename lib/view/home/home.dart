@@ -20,60 +20,62 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      bottom: false,
-      child: Scaffold(
-        extendBodyBehindAppBar: true,
-        appBar: TabBar(
-          controller: _tabController,
-          overlayColor: MaterialStateProperty.all(Colors.transparent),
-          indicatorSize: TabBarIndicatorSize.label,
-          indicatorWeight: 1,
-          tabs: const [
-            Tab(
-              child: Text(
-                "Tasks",
-              ),
-            ),
-            Tab(
-              child: Text(
-                "Completed",
-              ),
-            ),
-            Tab(
-              child: Text(
-                "Profile",
-              ),
-            ),
-          ],
-        ),
-        body: Column(
-          mainAxisSize: MainAxisSize.max,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const SizedBox(
-              height: 46,
-              child: ColoredBox(color: Colors.white),
-            ),
-            Divider(
-              color: Get.theme.colorScheme.surface,
-              thickness: 1,
-              height: 1,
-            ),
-            Expanded(
-              child: ColoredBox(
-                color: Get.theme.colorScheme.background,
-                child: TabBarView(
-                  controller: _tabController,
-                  children: const [
-                    TasksTab(),
-                    ColoredBox(color: Colors.yellow),
-                    ColoredBox(color: Colors.blue)
-                  ],
+    return ColoredBox(
+      color: Get.theme.scaffoldBackgroundColor,
+      child: SafeArea(
+        bottom: false,
+        child: Scaffold(
+          extendBodyBehindAppBar: true,
+          appBar: TabBar(
+            controller: _tabController,
+            overlayColor: MaterialStateProperty.all(Colors.transparent),
+            indicatorSize: TabBarIndicatorSize.label,
+            indicatorWeight: 1,
+            tabs: const [
+              Tab(
+                child: Text(
+                  "Tasks",
                 ),
               ),
-            )
-          ],
+              Tab(
+                child: Text(
+                  "Completed",
+                ),
+              ),
+              Tab(
+                child: Text(
+                  "Profile",
+                ),
+              ),
+            ],
+          ),
+          body: Column(
+            mainAxisSize: MainAxisSize.max,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(
+                height: 46,
+              ),
+              Divider(
+                color: Get.theme.colorScheme.surface,
+                thickness: 1,
+                height: 1,
+              ),
+              Expanded(
+                child: ColoredBox(
+                  color: Get.theme.colorScheme.background,
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: const [
+                      TasksTab(),
+                      ColoredBox(color: Colors.yellow),
+                      ColoredBox(color: Colors.blue)
+                    ],
+                  ),
+                ),
+              )
+            ],
+          ),
         ),
       ),
     );
