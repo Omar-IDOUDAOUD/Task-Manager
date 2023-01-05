@@ -28,9 +28,10 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
           extendBodyBehindAppBar: true,
           appBar: TabBar(
             controller: _tabController,
-            overlayColor: MaterialStateProperty.all(Colors.transparent),
+            overlayColor: MaterialStateProperty.all(Color.fromARGB(0, 213, 213, 213)),
             indicatorSize: TabBarIndicatorSize.label,
             indicatorWeight: 1,
+            physics: BouncingScrollPhysics(),
             tabs: const [
               Tab(
                 child: Text(
