@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:task_manager/view/home/tabs/completed.dart';
 import 'package:task_manager/view/home/tabs/tasks.dart';
 
 class Home extends StatefulWidget {
@@ -28,7 +29,8 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
           extendBodyBehindAppBar: true,
           appBar: TabBar(
             controller: _tabController,
-            overlayColor: MaterialStateProperty.all(Color.fromARGB(0, 213, 213, 213)),
+            overlayColor:
+                MaterialStateProperty.all(Color.fromARGB(0, 213, 213, 213)),
             indicatorSize: TabBarIndicatorSize.label,
             indicatorWeight: 1,
             physics: BouncingScrollPhysics(),
@@ -69,7 +71,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                     controller: _tabController,
                     children: const [
                       TasksTab(),
-                      ColoredBox(color: Colors.yellow),
+                      CompletedTab(),
                       ColoredBox(color: Colors.blue)
                     ],
                   ),
