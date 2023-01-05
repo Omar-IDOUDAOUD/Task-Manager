@@ -18,7 +18,7 @@ class TaskManger extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         appBarTheme: const AppBarTheme(
-          systemOverlayStyle:  SystemUiOverlayStyle.light,
+          systemOverlayStyle: SystemUiOverlayStyle.light,
         ),
         indicatorColor: Colors.black,
         tabBarTheme: TabBarTheme(
@@ -54,6 +54,8 @@ class TaskManger extends StatelessWidget {
               fontFamily: "Poppins", fontSize: 12, fontWeight: FontWeight.w500),
           headline4: TextStyle(
               fontFamily: "Poppins", fontSize: 13, fontWeight: FontWeight.w500),
+          headline5: TextStyle(
+              fontFamily: "Poppins", fontSize: 14, fontWeight: FontWeight.w500),
           headline6: TextStyle(
             fontFamily: "Poppins",
             fontSize: 25,
