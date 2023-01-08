@@ -15,11 +15,10 @@ class TasksTab extends StatefulWidget {
 class _TasksTabState extends State<TasksTab>
     with SingleTickerProviderStateMixin {
   int _currentPart = 0;
-  int? _categorySelectedId; //test cm
+  int? _categorySelectedId;
   final ScrollController _tabScrollController = ScrollController();
 
   late AnimationController _partsNavigationTopBarAnCtrl;
-  // late Animation _partsNavigationTopBarAn;
 
   @override
   void initState() {
@@ -40,10 +39,26 @@ class _TasksTabState extends State<TasksTab>
     return Stack(
       children: [
         SingleChildScrollView(
+          physics: BouncingScrollPhysics(),
           padding:
               const EdgeInsets.only(top: 70, bottom: 25, left: 25, right: 25),
           controller: _tabScrollController,
-          child: _getCurrentTabPart(),
+          child: AnimatedSwitcher(
+            layoutBuilder: (currentChild, previousChild) {
+              return Align(
+                alignment: Alignment.topCenter,
+                child: currentChild,
+              );
+            },
+            duration: 500.milliseconds,
+            transitionBuilder: (child, animation) {
+              return FadeTransition(
+                opacity: animation,
+                child: child,
+              );
+            },
+            child: _getCurrentTabPart(),
+          ),
         ),
         AnimatedBuilder(
           animation: CurvedAnimation(
@@ -127,7 +142,7 @@ class _TasksTabState extends State<TasksTab>
 
   _getCurrentTabPart() {
     if (_categorySelectedId != null)
-      return const _SpecificCategoryTasks(/** copyOf */);
+      return const _SpecificCategoryTasks();
     if (_currentPart == 0) {
       return const _TodayTasks();
     } else if (_currentPart == 1) {
@@ -360,7 +375,8 @@ class TasksTabPartsNavigationState extends State<_TasksTabPartsNavigation> {
                     color: _currentPart == 0
                         ? CstColors.a
                         : Get.theme.colorScheme.secondary,
-                    fontWeight: _currentPart == 0 ? FontWeight.bold : null,
+                    fontWeight:
+                        _currentPart == 0 ? FontWeight.bold : FontWeight.w400,
                   ),
                   duration: 200.milliseconds,
                   child: const Text(
@@ -398,7 +414,8 @@ class TasksTabPartsNavigationState extends State<_TasksTabPartsNavigation> {
                     color: _currentPart == 1
                         ? CstColors.a
                         : Get.theme.colorScheme.secondary,
-                    fontWeight: _currentPart == 1 ? FontWeight.bold : null,
+                    fontWeight:
+                        _currentPart == 1 ? FontWeight.bold : FontWeight.w400,
                   ),
                   duration: 200.milliseconds,
                   child: const Text(
@@ -422,7 +439,8 @@ class TasksTabPartsNavigationState extends State<_TasksTabPartsNavigation> {
                       color: _currentPart == 2
                           ? CstColors.a
                           : Get.theme.colorScheme.secondary,
-                      fontWeight: _currentPart == 2 ? FontWeight.bold : null,
+                      fontWeight:
+                          _currentPart == 2 ? FontWeight.bold : FontWeight.w400,
                     ),
                     duration: 200.milliseconds,
                     child: Text(
@@ -441,13 +459,14 @@ class TasksTabPartsNavigationState extends State<_TasksTabPartsNavigation> {
   _divider() => Padding(
         padding: const EdgeInsets.symmetric(horizontal: 10),
         child: SizedBox(
-          width: 1.5,
+          width: 1,
           height: 13,
           child: DecoratedBox(
-              decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(1),
-            color: Get.theme.colorScheme.secondary,
-          )),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(1),
+              color: Get.theme.colorScheme.secondary,
+            ),
+          ),
         ),
       );
 }
