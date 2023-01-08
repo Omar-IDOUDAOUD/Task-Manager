@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:task_manager/view/home/tabs/completed.dart';
+import 'package:task_manager/view/home/tabs/profile.dart';
 import 'package:task_manager/view/home/tabs/tasks.dart';
 
 class Home extends StatefulWidget {
@@ -72,7 +73,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                     children: const [
                       TasksTab(),
                       CompletedTab(),
-                      ColoredBox(color: Colors.blue)
+                     ProfileTab()
                     ],
                   ),
                 ),
