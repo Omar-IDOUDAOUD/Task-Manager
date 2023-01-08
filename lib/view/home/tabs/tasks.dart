@@ -175,12 +175,12 @@ class _TodayTasks extends StatelessWidget {
         SizedBox(
           height: 20,
         ),
-        _TaskCard(),
-        _TaskCard(),
-        _TaskCard(),
-        _TaskCard(),
-        _TaskCard(),
-        _TaskCard(),
+        TaskCard(),
+        TaskCard(),
+        TaskCard(),
+        TaskCard(),
+        TaskCard(),
+        TaskCard(),
       ],
     );
   }
@@ -200,11 +200,11 @@ class _AllTasks extends StatelessWidget {
         SizedBox(
           height: 20,
         ),
-        _TaskCard(),
+        TaskCard(),
         SizedBox(
           height: 20,
         ),
-        _TaskCard(),
+        TaskCard(),
       ],
     );
   }
@@ -237,9 +237,9 @@ class _SpecificCategoryTasks extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: const [
-        _TaskCard(),
-        _TaskCard(),
-        _TaskCard(),
+        TaskCard(),
+        TaskCard(),
+        TaskCard(),
       ],
     );
   }

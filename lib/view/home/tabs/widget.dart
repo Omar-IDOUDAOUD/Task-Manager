@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:task_manager/core/constants/colors.dart';
 
+
+
+
+
 class TaskCard extends StatelessWidget {
   const TaskCard({Key? key, this.isLive = true}) : super(key: key);
   final bool isLive;
