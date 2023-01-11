@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:task_manager/core/constants/colors.dart';
-import 'package:task_manager/view/home/home.dart';
+import 'package:task_manager/view/home.dart';
 
 void main() {
   runApp(const TaskManger());

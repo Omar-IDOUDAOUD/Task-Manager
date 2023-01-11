@@ -34,7 +34,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                 MaterialStateProperty.all(Color.fromARGB(0, 213, 213, 213)),
             indicatorSize: TabBarIndicatorSize.label,
             indicatorWeight: 1,
-            physics: BouncingScrollPhysics(),
+            physics:const  BouncingScrollPhysics(),
             tabs: const [
               Tab(
                 child: Text(

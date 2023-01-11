@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:task_manager/view/home/tabs/widget.dart';
+import 'package:task_manager/view/home/widgets/task_card.dart';
 
 class CompletedTab extends StatelessWidget {
   const CompletedTab({Key? key}) : super(key: key);

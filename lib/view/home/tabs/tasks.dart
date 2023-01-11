@@ -3,7 +3,8 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:task_manager/core/constants/colors.dart';
-import 'package:task_manager/view/home/tabs/widget.dart';
+import 'package:task_manager/view/home/new_task_bottom_sheet.dart';
+import 'package:task_manager/view/home/widgets/task_card.dart';
 
 /// MAIN ABSTRACT
 class TasksTab extends StatefulWidget {
@@ -142,8 +143,7 @@ class _TasksTabState extends State<TasksTab>
   }
 
   _getCurrentTabPart() {
-    if (_categorySelectedId != null)
-      return const _SpecificCategoryTasks();
+    if (_categorySelectedId != null) return const _SpecificCategoryTasks();
     if (_currentPart == 0) {
       return const _TodayTasks();
     } else if (_currentPart == 1) {
@@ -292,7 +292,16 @@ class __AddTaskButtonState extends State<_AddTaskButton> {
   bool _isFocus = false;
   @override
   Widget build(BuildContext context) {
+
     return GestureDetector(
+      onTap: () {
+        Get.bottomSheet(
+         NewTaskBottomSheetWidget(), 
+            isScrollControlled: true,
+            ignoreSafeArea: true,
+            isDismissible: true,
+            barrierColor: Colors.transparent);
+      },
       onTapDown: (dts) {
         setState(() {
           _isFocus = true;
@@ -471,7 +480,6 @@ class TasksTabPartsNavigationState extends State<_TasksTabPartsNavigation> {
         ),
       );
 }
-
 
 class _CategoryCard extends StatelessWidget {
   const _CategoryCard({Key? key, required this.onTap}) : super(key: key);
