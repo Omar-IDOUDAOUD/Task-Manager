@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:task_manager/binding/home_binding.dart';
 import 'package:task_manager/core/constants/colors.dart';
 import 'package:task_manager/view/home.dart';
 
@@ -10,12 +11,18 @@ void main() {
 
 class TaskManger extends StatelessWidget {
   const TaskManger({Key? key}) : super(key: key);
-
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
+      getPages: [
+        GetPage(
+          name: '/home',
+          page: () => const Home(),
+          binding: HomeBinding(), 
+        ),
+      ],
+      initialRoute: '/home',
       theme: ThemeData(
         appBarTheme: const AppBarTheme(
           systemOverlayStyle: SystemUiOverlayStyle.light,
@@ -64,7 +71,6 @@ class TaskManger extends StatelessWidget {
           ),
         ),
       ),
-      home: const Home(),
     );
   }
 }
