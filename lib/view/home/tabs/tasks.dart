@@ -1,8 +1,12 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
+import 'package:task_manager/controller/home/tasks_controller.dart';
 import 'package:task_manager/core/constants/colors.dart';
+import 'package:task_manager/data/model/cotegoriy.dart';
+import 'package:task_manager/data/model/task.dart';
 import 'package:task_manager/view/home/new_task_bottom_sheet.dart';
 import 'package:task_manager/view/home/widgets/task_card.dart';
 
@@ -16,6 +20,8 @@ class TasksTab extends StatefulWidget {
 
 class _TasksTabState extends State<TasksTab>
     with SingleTickerProviderStateMixin {
+  final TasksController _controller = Get.find();
+
   int _currentPart = 0;
   int? _categorySelectedId;
   final ScrollController _tabScrollController = ScrollController();
@@ -145,7 +151,7 @@ class _TasksTabState extends State<TasksTab>
   _getCurrentTabPart() {
     if (_categorySelectedId != null) return const _SpecificCategoryTasks();
     if (_currentPart == 0) {
-      return const _TodayTasks();
+      return _TodayTasks();
     } else if (_currentPart == 1) {
       return const _AllTasks();
     } else if (_currentPart == 2) {
@@ -167,7 +173,7 @@ class _TodayTasks extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      children: const [
+      children: [
         _Title(
           title: 'Today\'s Task',
           subTitle: 'Wednesday, May 20',
@@ -175,12 +181,24 @@ class _TodayTasks extends StatelessWidget {
         SizedBox(
           height: 20,
         ),
-        TaskCard(),
-        TaskCard(),
-        TaskCard(),
-        TaskCard(),
-        TaskCard(),
-        TaskCard(),
+        GetBuilder<TasksController>(
+          builder: (controller) {
+            return FutureBuilder<List<TaskModel>>(
+              future: controller.getTodaysTasks(),
+              builder: (ctx, screenShot) {
+                if (!screenShot.hasData)
+                  return Center(
+                    child: CupertinoActivityIndicator(),
+                  );
+                return Column(
+                  children: List.generate(
+                      screenShot.data!.length, (index) => TaskCard()),
+                );
+              },
+            );
+          },
+          id: TODAYS_TASKS_LIST_WID_ID,
+        )
       ],
     );
   }
@@ -191,21 +209,37 @@ class _AllTasks extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: const [
-        _Title(
-          title: "All Tasks",
-          subTitle: "20% of tasks completed",
-        ),
-        SizedBox(
-          height: 20,
-        ),
-        TaskCard(),
-        SizedBox(
-          height: 20,
-        ),
-        TaskCard(),
-      ],
+    return GetBuilder<TasksController>(
+      builder: (controller) {
+        return Column(
+          children: [
+            _Title(
+              title: "All Tasks",
+              subTitle: "20% of tasks completed",
+            ),
+            SizedBox(
+              height: 20,
+            ),
+            FutureBuilder<List<TaskModel>>(
+              future: controller.getAllTasks(),
+              builder: (ctx, screenShot) {
+                if (!screenShot.hasData)
+                  return Center(
+                    child: CupertinoActivityIndicator(),
+                  );
+                return Column(
+                  children: List.generate(
+                      screenShot.data!.length,
+                      (index) => TaskCard(
+                            isLive: false,
+                          )),
+                );
+              },
+            ),
+          ],
+        );
+      },
+      id: ALL_TASKS_WID_ID,
     );
   }
 }
@@ -217,15 +251,26 @@ class _Categories extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return StaggeredGrid.count(
-      crossAxisCount: 2,
-      mainAxisSpacing: 10,
-      crossAxisSpacing: 10,
-      children: [
-        _CategoryCard(onTap: () => onSelectedCatecory(0)),
-        _CategoryCard(onTap: () => onSelectedCatecory(1)),
-        _CategoryCard(onTap: () => onSelectedCatecory(2)),
-      ],
+    return GetBuilder<TasksController>(
+      builder: (controller) => FutureBuilder<List<CategoryModel>>(
+        future: controller.getCategories(),
+        builder: (ctx, screenShot) {
+          if (!screenShot.hasData)
+            return Center(
+              child: CupertinoActivityIndicator(),
+            );
+          return StaggeredGrid.count(
+            crossAxisCount: 2,
+            mainAxisSpacing: 10,
+            crossAxisSpacing: 10,
+            children: List.generate(
+              screenShot.data!.length,
+              (index) => _CategoryCard(onTap: () => onSelectedCatecory(2)),
+            ),
+          );
+        },
+      ),
+      id: CATEGORIES_WID_ID,
     );
   }
 }
@@ -235,12 +280,23 @@ class _SpecificCategoryTasks extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: const [
-        TaskCard(),
-        TaskCard(),
-        TaskCard(),
-      ],
+    return GetBuilder<TasksController>(
+      builder: (controller) => FutureBuilder<List<CategoryModel>>(
+        future: controller.getCategoryTasks(1),
+        builder: (ctx, screenShot) {
+          if (!screenShot.hasData)
+            return Center(
+              child: CupertinoActivityIndicator(),
+            );
+          return Column(
+            children: [
+              TaskCard(),
+              TaskCard(isLive: false),
+            ],
+          );
+        },
+      ),
+      id: CATEGORYTASKS_WID_ID,
     );
   }
 }
@@ -292,11 +348,9 @@ class __AddTaskButtonState extends State<_AddTaskButton> {
   bool _isFocus = false;
   @override
   Widget build(BuildContext context) {
-
     return GestureDetector(
       onTap: () {
-        Get.bottomSheet(
-         NewTaskBottomSheetWidget(), 
+        Get.bottomSheet(NewTaskBottomSheetWidget(),
             isScrollControlled: true,
             ignoreSafeArea: true,
             isDismissible: true,
