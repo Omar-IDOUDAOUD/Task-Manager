@@ -6,6 +6,7 @@ import 'package:task_manager/core/constants/colors.dart';
 import 'package:task_manager/view/home.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized(); 
   runApp(const TaskManger());
 }
 
@@ -13,6 +14,7 @@ class TaskManger extends StatelessWidget {
   const TaskManger({Key? key}) : super(key: key);
   @override
   Widget build(BuildContext context) {
+    
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       getPages: [
