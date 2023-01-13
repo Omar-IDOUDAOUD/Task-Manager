@@ -5,6 +5,8 @@ class TaskModel {
   final String? descreption;
   final TaskPriorities? priority;
   final DateTime? terminationDate;
+  final DateTime? completeionDate;
+  final bool completed;
   final int categoryId;
 
   TaskModel({
@@ -14,6 +16,8 @@ class TaskModel {
     this.descreption,
     this.priority,
     this.terminationDate,
+    this.completeionDate, 
+    this.completed = false, 
     required this.categoryId,
   });
 }
