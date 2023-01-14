@@ -3,7 +3,32 @@ import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
-///--------------DESKTOP VERSION--------------///
+const String TASKS_TABLE_CREATE_SQLQUERY = """
+      CREATE TABLE Tasks(
+        id  INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+        title  INTEGER NOT NULL,
+        descreption  TEXT NULL,
+        category  INTEGER NOT NULL,
+        creation_date DATETIME,
+        priority  TEXT NULL DEFAULT 'MEDIUM',
+        termination_date  DATETIME NULL,
+        completion_date  DATETIME NOT NULL,
+        completed  TINYINT NOT NULL,
+          FOREIGN KEY (category)
+          REFERENCES  Categories  (id)
+          ON DELETE NO ACTION
+          ON UPDATE NO ACTION);
+      """;
+const String CATEGORIES_TABLE_CREATE_SQLQUERY = """
+      CREATE TABLE Categories(
+        id  INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+        title  TEXT NOT NULL,
+        color_code  TEXT NULL,
+        productivity_percentag  INTEGER NULL,
+        tasks_number  INTEGER NOT NULL DEFAULT 0
+      )
+      """; 
+
 class SQLiteConnectionService {
   SQLiteConnectionService._();
 
@@ -27,30 +52,7 @@ class SQLiteConnectionService {
   }
 
   void _onCreate(Database db, int version) async {
-    db.execute("""
-      CREATE TABLE Tasks(
-        id  INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-        title  INTEGER NOT NULL,
-        descreption  TEXT NULL,
-        category  INTEGER NOT NULL,
-        creation_date DATETIME,
-        priority  TEXT NULL DEFAULT 'MEDIUM',
-        termination_date  DATETIME NULL,
-        completion_date  DATETIME NOT NULL,
-        completed  TINYINT NOT NULL,
-          FOREIGN KEY (category)
-          REFERENCES  Categories  (id)
-          ON DELETE NO ACTION
-          ON UPDATE NO ACTION);
-
-      CREATE TABLE Categories(
-        id  INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-        title  TEXT NOT NULL,
-        color_code  TEXT NULL,
-        productivity_percentag  INTEGER NULL,
-        tasks_number  INTEGER NOT NULL DEFAULT 0
-      )
-    """);
+    db.execute(TASKS_TABLE_CREATE_SQLQUERY + CATEGORIES_TABLE_CREATE_SQLQUERY);
     print('LOG: database onCreate function executed.');
   }
 
