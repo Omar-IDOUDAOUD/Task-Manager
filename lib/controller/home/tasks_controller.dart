@@ -19,7 +19,7 @@ class TasksController extends GetxController {
           id: 2,
           creationDate: DateTime.now(),
           title: 'today task',
-          descreption: 'a descreption',
+          description: 'a descreption',
           priority: TaskPriorities.low,
           categoryId: 2,
         ),
@@ -27,23 +27,23 @@ class TasksController extends GetxController {
     );
   }
 
-  Future<List<TaskModel>> getAllTasks() {
+  Future<List<TaskModel>> getAllTasks() async {
     return Future.delayed(200.milliseconds).then(
       (value) => [
         TaskModel(
           id: 2,
           creationDate: DateTime.now(),
           title: 'today task',
-          descreption: 'a descreption',
-          priority: TaskPriorities.low,
+          description: 'a description',
+          priority: TaskPriorities.medium,
           categoryId: 2,
         ),
         TaskModel(
           id: 2,
           creationDate: DateTime.now(),
           title: 'today task',
-          descreption: 'a descreption',
-          priority: TaskPriorities.low,
+          description: 'a descreption',
+          priority: TaskPriorities.high,
           categoryId: 2,
         ),
       ],
@@ -53,17 +53,17 @@ class TasksController extends GetxController {
   Future<List<CategoryModel>> getCategories() {
     return Future.delayed(200.milliseconds).then(
       (value) => [
-        CategoryModel(id: 0, color: Colors.blue, title: 'Work'), 
-        CategoryModel(id: 0, color: Colors.red, title: 'Study'), 
+        CategoryModel(id: 0, color: Colors.blue, title: 'Work'),
+        CategoryModel(id: 0, color: Colors.red, title: 'Study'),
       ],
     );
   }
 
-    Future<List<CategoryModel>> getCategoryTasks(int categoryId) {
+  Future<List<CategoryModel>> getCategoryTasks(int categoryId) {
     return Future.delayed(200.milliseconds).then(
       (value) => [
-        CategoryModel(id: 0, color: Colors.blue, title: 'Work'), 
-        CategoryModel(id: 0, color: Colors.red, title: 'Study'), 
+        CategoryModel(id: 0, color: Colors.blue, title: 'Work'),
+        CategoryModel(id: 0, color: Colors.red, title: 'Study'),
       ],
     );
   }
