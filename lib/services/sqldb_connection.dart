@@ -7,14 +7,14 @@ const String TASKS_TABLE_CREATE_SQLQUERY = """
       CREATE TABLE Tasks(
         id  INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
         title  INTEGER NOT NULL,
-        descreption  TEXT NULL,
-        category  INTEGER NOT NULL,
+        description  TEXT ,
+        category_id  INTEGER NOT NULL,
         creation_date DATETIME,
-        priority  TEXT NULL DEFAULT 'MEDIUM',
-        termination_date  DATETIME NULL,
-        completion_date  DATETIME NOT NULL,
+        priority INTEGER NULL DEFAULT 1,
+        termination_date  DATETIME,
+        completion_date  DATETIME,
         completed  TINYINT NOT NULL,
-          FOREIGN KEY (category)
+          FOREIGN KEY (category_id)
           REFERENCES  Categories  (id)
           ON DELETE NO ACTION
           ON UPDATE NO ACTION);
@@ -23,11 +23,11 @@ const String CATEGORIES_TABLE_CREATE_SQLQUERY = """
       CREATE TABLE Categories(
         id  INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
         title  TEXT NOT NULL,
-        color_code  TEXT NULL,
-        productivity_percentag  INTEGER NULL,
+        color_code  TEXT  NOT NULL,
+        productivity_percentage  INTEGER  ,
         tasks_number  INTEGER NOT NULL DEFAULT 0
       )
-      """; 
+      """;
 
 class SQLiteConnectionService {
   SQLiteConnectionService._();
@@ -38,15 +38,18 @@ class SQLiteConnectionService {
     return _instance!;
   }
 
-  static const DATABASE_NAME = "TaskManagerDBTest.db";
+  static const DATABASE_NAME = "TaskManagerSqlDbTesting.db";
   static const DATABASE_VERSION = 1;
   Database? _db;
 
   Future<Database?> get db async {
+    final initDb = () async => GetPlatform.isDesktop
+        ? await _initialDesktopDataBase()
+        : await _initialMobileDataBase();
     if (_db == null)
-      return GetPlatform.isDesktop
-          ? initialDesktopDataBase()
-          : initialMobileDataBase();
+      return initDb();
+    else if (!_db!.isOpen)
+      return initDb();
     else
       return _db;
   }
@@ -56,15 +59,16 @@ class SQLiteConnectionService {
     print('LOG: database onCreate function executed.');
   }
 
-  Future<Database> initialMobileDataBase() async {
+  Future<Database> _initialMobileDataBase() async {
     print("LOG: start initialization of mobile database");
     final String path = join(await getDatabasesPath(), DATABASE_NAME);
     _db = await openDatabase(path, onCreate: _onCreate);
+    
     print("LOG: finish initialization of mobile database");
     return _db!;
   }
 
-  Future<Database> initialDesktopDataBase() async {
+  Future<Database> _initialDesktopDataBase() async {
     print("LOG: start initialization of desktop database");
     sqfliteFfiInit();
     final String path =
@@ -81,10 +85,8 @@ class SQLiteConnectionService {
     return _db!;
   }
 
-  void closeDatabase()async{
-   await _db?.close(); 
+  Future closeDatabase() async {
+    await _db?.close();
     print("LOG: close database");
-
   }
 }
-

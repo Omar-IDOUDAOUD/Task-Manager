@@ -1,22 +1,22 @@
 class TaskModel {
-  int id;
+  int? id;
   DateTime creationDate;
   String title;
-  String? descreption;
+  String? description;
   TaskPriorities? priority;
   DateTime? terminationDate;
-  DateTime? completeionDate;
+  DateTime? completionDate;
   bool completed;
   int categoryId;
 
   TaskModel({
-    required this.id,
+    this.id,
     required this.creationDate,
     required this.title,
-    this.descreption,
+    this.description,
     this.priority,
     this.terminationDate,
-    this.completeionDate,
+    this.completionDate,
     this.completed = false,
     required this.categoryId,
   });
@@ -24,13 +24,17 @@ class TaskModel {
   factory TaskModel.fromMap(Map<String, dynamic> map) {
     return TaskModel(
       id: map['id'],
-      creationDate: map['creation_date'],
+      creationDate: DateTime.parse(map['creation_date']),
       title: map['title'],
-      descreption: map['descreption'],
-      priority: TaskPriorities.values.elementAt(map['priority'] as int), 
-      terminationDate: map['termination_date'],
-      completeionDate: map['completeion_date'],
-      completed: map['completed'],
+      description: map['description'],
+      priority: map['priority'] != null
+          ? TaskPriorities.values.elementAt(map['priority'])
+          : null,
+      terminationDate: map['termination_date'] != null
+          ? DateTime.parse(map['termination_date'])
+          : null,
+      completionDate: map['completion_date'] != null? DateTime.parse(map['completion_date']) : null,
+      completed: map['completed'] == 1,
       categoryId: map['category_id'],
     );
   }
@@ -38,17 +42,16 @@ class TaskModel {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'creation_date': creationDate,
+      'creation_date': creationDate.toIso8601String(),
       'title': title,
-      'descreption': descreption,
+      'description': description,
       'priority': priority?.index,
-      'termination_date': terminationDate,
-      'completeion_date': completeionDate,
-      'completed': completed,
+      'termination_date': terminationDate?.toIso8601String(),
+      'completion_date': completionDate?.toIso8601String(),
+      'completed': completed == true ? 1 : 0,
       'category_id': categoryId,
     };
   }
-
 }
 
-enum TaskPriorities { high, medium, low }
+enum TaskPriorities { low, medium, high }
