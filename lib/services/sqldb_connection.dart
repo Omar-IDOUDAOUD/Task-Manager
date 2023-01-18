@@ -28,6 +28,9 @@ const String CATEGORIES_TABLE_CREATE_SQLQUERY = """
         tasks_number  INTEGER NOT NULL DEFAULT 0
       )
       """;
+const String INITIAL_DATA_INSERTATION_SQLQUERY = """
+      INSERT INTO Categories(title,color_code) VALUES("My Category", 4287758251)
+""";
 
 class SQLiteConnectionService {
   SQLiteConnectionService._();
@@ -55,7 +58,9 @@ class SQLiteConnectionService {
   }
 
   void _onCreate(Database db, int version) async {
-    db.execute(TASKS_TABLE_CREATE_SQLQUERY + CATEGORIES_TABLE_CREATE_SQLQUERY);
+    await db.execute(
+        TASKS_TABLE_CREATE_SQLQUERY + CATEGORIES_TABLE_CREATE_SQLQUERY);
+    await db.rawInsert(INITIAL_DATA_INSERTATION_SQLQUERY);
     print('LOG: database onCreate function executed.');
   }
 
