@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 class TaskModel {
   int? id;
   DateTime creationDate;
@@ -8,6 +10,9 @@ class TaskModel {
   DateTime? completionDate;
   bool completed;
   int categoryId;
+  /**those properties is initialed whene this model is being to send to view*/
+  String? categoryTitle; 
+  Color? categoryColor;
 
   TaskModel({
     this.id,
@@ -33,7 +38,9 @@ class TaskModel {
       terminationDate: map['termination_date'] != null
           ? DateTime.parse(map['termination_date'])
           : null,
-      completionDate: map['completion_date'] != null? DateTime.parse(map['completion_date']) : null,
+      completionDate: map['completion_date'] != null
+          ? DateTime.parse(map['completion_date'])
+          : null,
       completed: map['completed'] == 1,
       categoryId: map['category_id'],
     );
