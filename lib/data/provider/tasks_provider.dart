@@ -53,10 +53,10 @@ class TasksProvider extends ModelProvider {
     return _db!.update(_tableName, newData(oldData).toMap(), where: 'id = $id');
   }
 
-  Future<List<TaskModel>> readTasks() async {
-    final data = await _db!.query(_tableName);
-    return data
-        .map((e) => TaskModel.fromMap(e))
-        .toList();
+  Future<List<TaskModel>> readTasks(
+      {String? where, List<Object?>? whereArgs}) async {
+    final data =
+        await _db!.query(_tableName, where: where, whereArgs: whereArgs);
+    return data.map((e) => TaskModel.fromMap(e)).toList();
   }
 }

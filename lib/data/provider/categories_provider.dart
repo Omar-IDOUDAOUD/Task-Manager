@@ -49,8 +49,8 @@ class CategoriesProvider extends ModelProvider {
     return _db!.update(_tableName, newData(oldData).toMap(), where: 'id = $id');
   }
 
-  Future<List<CategoryModel>> readCategories() async {
-    final data = await _db!.query(_tableName);
+  Future<List<CategoryModel>> readCategories({String? where, List<Object?>? whereArgs}) async {
+    final data = await _db!.query(_tableName, where:  where, whereArgs:  whereArgs);
     return data.map((e) => CategoryModel.fromMap(e)).toList();
   }
 }
