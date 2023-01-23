@@ -24,6 +24,8 @@ class TaskModel {
     this.completionDate,
     this.completed = false,
     required this.categoryId,
+    this.categoryColor , 
+    this.categoryTitle,
   });
 
   factory TaskModel.fromMap(Map<String, dynamic> map) {
@@ -42,7 +44,9 @@ class TaskModel {
           ? DateTime.parse(map['completion_date'])
           : null,
       completed: map['completed'] == 1,
-      categoryId: map['category_id'],
+      categoryId: map['category_id'], 
+      categoryTitle: map['category_title'],
+      categoryColor: map['category_color'], 
     );
   }
 
@@ -57,6 +61,8 @@ class TaskModel {
       'completion_date': completionDate?.toIso8601String(),
       'completed': completed == true ? 1 : 0,
       'category_id': categoryId,
+      'category_title': categoryTitle, 
+      'category_color': categoryColor, 
     };
   }
 }
