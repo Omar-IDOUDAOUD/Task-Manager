@@ -18,6 +18,7 @@ class TasksController extends GetxController {
   List<TaskModel>? _todayTasks;
   List<TaskModel>? _allTasks;
   List<CategoryModel>? _categories;
+  List<TaskModel>? _completedTasks;
   RxInt todayTasksNumber = 0.obs;
   RxInt allTasksNumber = 0.obs;
   late final SharedPreferences _preferences;
@@ -34,8 +35,8 @@ class TasksController extends GetxController {
 
   @override
   void onClose() {
-    super.onClose(); 
-    print('LOG: onClose called'); 
+    super.onClose();
+    print('LOG: onClose called');
     _preferences.setInt('ALL_TASKS_NUMBER', allTasksNumber.value);
     _preferences.setInt('TODAYS_TASKS_NUMBER', todayTasksNumber.value);
   }
@@ -145,5 +146,11 @@ class TasksController extends GetxController {
           (oldData) => categoryTasks.elementAt(i));
     }
     return categoryTasks;
+  }
+
+  Future<List<TaskModel>> getCompletedTasks() async {
+    _completedTasks = await _tasksProvider
+        .readTasks(where: 'completed = ?', whereArgs: ['1']);
+    return _completedTasks!;
   }
 }
