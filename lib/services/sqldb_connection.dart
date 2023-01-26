@@ -8,12 +8,14 @@ const String TASKS_TABLE_CREATE_SQLQUERY = """
         id  INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
         title  INTEGER NOT NULL,
         description  TEXT ,
-        category_id  INTEGER NOT NULL,
+        category_id  INTEGER NOT NULL DEFAULT 1,
         creation_date DATETIME,
         priority INTEGER NULL DEFAULT 1,
         termination_date  DATETIME,
         completion_date  DATETIME,
-        completed  TINYINT NOT NULL,
+        completed  INTEGER NOT NULL DEFAULT 0,
+        category_title TEXT,
+        category_color_code TEXT,
           FOREIGN KEY (category_id)
           REFERENCES  Categories  (id)
           ON DELETE NO ACTION
@@ -24,8 +26,11 @@ const String CATEGORIES_TABLE_CREATE_SQLQUERY = """
         id  INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
         title  TEXT NOT NULL,
         color_code  TEXT  NOT NULL,
-        productivity_percentage  INTEGER  ,
-        tasks_number  INTEGER NOT NULL DEFAULT 0
+        productivity_percentage  DOUBLE DEFAULT 0.0,
+        tasks_number INTEGER NOT NULL DEFAULT 0,
+        last_first_task_title TEXT,
+        last_second_task_title TEXT,
+        last_third_task_title TEXT
       )
       """;
 const String INITIAL_DATA_INSERTATION_SQLQUERY = """
@@ -41,7 +46,7 @@ class SQLiteConnectionService {
     return _instance!;
   }
 
-  static const DATABASE_NAME = "TaskManagerSqlDbTesting.db";
+  static const DATABASE_NAME = "TaskManagerSqlDbTestingv38.db";
   static const DATABASE_VERSION = 1;
   Database? _db;
 
@@ -68,7 +73,7 @@ class SQLiteConnectionService {
     print("LOG: start initialization of mobile database");
     final String path = join(await getDatabasesPath(), DATABASE_NAME);
     _db = await openDatabase(path, onCreate: _onCreate);
-    
+
     print("LOG: finish initialization of mobile database");
     return _db!;
   }

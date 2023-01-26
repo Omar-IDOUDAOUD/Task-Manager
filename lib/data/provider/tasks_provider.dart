@@ -5,6 +5,9 @@ import 'package:task_manager/data/model/task.dart';
 import 'package:task_manager/services/sqldb_connection.dart';
 
 abstract class ModelProvider {
+  bool get isInitialized;
+  Database? get db;
+  String get tableName;
   FutureOr<void> init();
   FutureOr<void> dispose();
 }
@@ -13,7 +16,13 @@ class TasksProvider extends ModelProvider {
   SQLiteConnectionService? _sqlDbConnector;
   Database? _db;
 
+  @override
+  String get tableName => 'Tasks';
+
+  @override
   bool get isInitialized => _db != null ? _db!.isOpen : false;
+  @override
+  Database? get db => _db;
 
   @override
   FutureOr<void> init() async {
@@ -53,10 +62,25 @@ class TasksProvider extends ModelProvider {
     return _db!.update(_tableName, newData(oldData).toMap(), where: 'id = $id');
   }
 
-  Future<List<TaskModel>> readTasks(
-      {String? where, List<Object?>? whereArgs}) async {
-    final data =
-        await _db!.query(_tableName, where: where, whereArgs: whereArgs);
+  Future<List<TaskModel>> readTasks({
+    String? where,
+    List<Object?>? whereArgs,
+    List<String>? columns,
+    int? limit,
+    String? groupBy,
+    int? offset,
+    String? orderBy,
+  }) async {
+    final data = await _db!.query(
+      _tableName,
+      where: where,
+      whereArgs: whereArgs,
+      columns: columns,
+      limit: limit,
+      offset: offset,
+      groupBy: groupBy,
+      orderBy: orderBy,
+    );
     return data.map((e) => TaskModel.fromMap(e)).toList();
   }
 }

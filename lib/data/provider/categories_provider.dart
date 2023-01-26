@@ -9,7 +9,12 @@ class CategoriesProvider extends ModelProvider {
   SQLiteConnectionService? _sqlDbConnector;
   Database? _db;
 
+  @override
+  String get tableName => 'Categories';
+  @override
   bool get isInitialized => _db != null ? _db!.isOpen : false;
+  @override
+  Database? get db => _db;
 
   @override
   FutureOr<void> init() async {
@@ -49,8 +54,23 @@ class CategoriesProvider extends ModelProvider {
     return _db!.update(_tableName, newData(oldData).toMap(), where: 'id = $id');
   }
 
-  Future<List<CategoryModel>> readCategories({String? where, List<Object?>? whereArgs}) async {
-    final data = await _db!.query(_tableName, where:  where, whereArgs:  whereArgs);
+  Future<List<CategoryModel>> readCategories({
+    String? where,
+    List<Object?>? whereArgs,
+    List<String>? columns,
+    int? limit,
+    String? groupBy,
+    int? offset,
+    String? orderBy,
+  }) async {
+    final data = await _db!.query(_tableName,
+        where: where,
+        whereArgs: whereArgs,
+        columns: columns,
+        limit: limit,
+        groupBy: groupBy,
+        offset: offset,
+        orderBy: orderBy);
     return data.map((e) => CategoryModel.fromMap(e)).toList();
   }
 }

@@ -20,17 +20,17 @@ class TasksTab extends StatefulWidget {
 
 class _TasksTabState extends State<TasksTab>
     with SingleTickerProviderStateMixin {
-  final TasksController _controller = Get.find();
 
   int _currentPart = 0;
   int? _categorySelectedId;
+  String? _categorySelectedTitle;
+
   final ScrollController _tabScrollController = ScrollController();
 
   late AnimationController _partsNavigationTopBarAnCtrl;
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     _partsNavigationTopBarAnCtrl = AnimationController(
         vsync: this, duration: 100.milliseconds, lowerBound: 0, upperBound: 65);
@@ -97,9 +97,8 @@ class _TasksTabState extends State<TasksTab>
           right: 0,
           left: 0,
           child: _TasksTabPartsNavigation(
-            specificCategoryName: _categorySelectedId != null
-                ? "work $_categorySelectedId"
-                : null,
+            specificCategoryName:
+                _categorySelectedId != null ? _categorySelectedTitle : null,
             onChangedPart: (newPart) => setState(
               () {
                 _currentPart = newPart;
@@ -149,16 +148,20 @@ class _TasksTabState extends State<TasksTab>
   }
 
   _getCurrentTabPart() {
-    if (_categorySelectedId != null) return const _SpecificCategoryTasks();
+    if (_categorySelectedId != null)
+      return _SpecificCategoryTasks(
+        categoryId: _categorySelectedId!,
+      );
     if (_currentPart == 0) {
-      return _TodayTasks();
+      return const _TodayTasks();
     } else if (_currentPart == 1) {
       return const _AllTasks();
     } else if (_currentPart == 2) {
       return _Categories(
-        onSelectedCatecory: (id) {
+        onSelectedCatecory: (id, categoryTitle) {
           setState(() {
             _categorySelectedId = id;
+            _categorySelectedTitle = categoryTitle;
           });
         },
       );
@@ -192,7 +195,10 @@ class _TodayTasks extends StatelessWidget {
                   );
                 return Column(
                   children: List.generate(
-                      screenShot.data!.length, (index) => TaskCard()),
+                      screenShot.data!.length,
+                      (index) => TaskCard(
+                            data: screenShot.data!.elementAt(index),
+                          )),
                 );
               },
             );
@@ -229,10 +235,11 @@ class _AllTasks extends StatelessWidget {
                   );
                 return Column(
                   children: List.generate(
-                      screenShot.data!.length,
-                      (index) => TaskCard(
-                            isLive: false,
-                          )),
+                    screenShot.data!.length,
+                    (index) => TaskCard(
+                      data: screenShot.data!.elementAt(index),
+                    ),
+                  ),
                 );
               },
             ),
@@ -247,7 +254,7 @@ class _AllTasks extends StatelessWidget {
 class _Categories extends StatelessWidget {
   const _Categories({Key? key, required this.onSelectedCatecory})
       : super(key: key);
-  final Function(int id) onSelectedCatecory;
+  final Function(int id, String categoryTitle) onSelectedCatecory;
 
   @override
   Widget build(BuildContext context) {
@@ -265,7 +272,12 @@ class _Categories extends StatelessWidget {
             crossAxisSpacing: 10,
             children: List.generate(
               screenShot.data!.length,
-              (index) => _CategoryCard(onTap: () => onSelectedCatecory(2)),
+              (index) => _CategoryCard(
+                onTap: () => onSelectedCatecory(
+                    screenShot.data!.elementAt(index).id!,
+                    screenShot.data!.elementAt(index).title!),
+                data: screenShot.data!.elementAt(index),
+              ),
             ),
           );
         },
@@ -276,23 +288,28 @@ class _Categories extends StatelessWidget {
 }
 
 class _SpecificCategoryTasks extends StatelessWidget {
-  const _SpecificCategoryTasks({Key? key}) : super(key: key);
+  const _SpecificCategoryTasks({Key? key, required this.categoryId})
+      : super(key: key);
+  final int categoryId;
 
   @override
   Widget build(BuildContext context) {
     return GetBuilder<TasksController>(
-      builder: (controller) => FutureBuilder<List<CategoryModel>>(
-        future: controller.getCategoryTasks(1),
+      builder: (controller) => FutureBuilder<List<TaskModel>>(
+        future: controller.getCategoryTasks(categoryId),
         builder: (ctx, screenShot) {
           if (!screenShot.hasData)
             return Center(
               child: CupertinoActivityIndicator(),
             );
+
           return Column(
-            children: [
-              TaskCard(),
-              TaskCard(isLive: false),
-            ],
+            children: List.generate(
+              screenShot.data!.length,
+              (index) => TaskCard(
+                data: screenShot.data!.elementAt(index),
+              ),
+            ),
           );
         },
       ),
@@ -419,6 +436,7 @@ class _TasksTabPartsNavigation extends StatefulWidget {
 
 class TasksTabPartsNavigationState extends State<_TasksTabPartsNavigation> {
   int _currentPart = 0;
+  final _controller = Get.find<TasksController>();
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -452,21 +470,23 @@ class TasksTabPartsNavigationState extends State<_TasksTabPartsNavigation> {
                 width: 5,
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                decoration: BoxDecoration(
-                  color: _currentPart == 0
-                      ? CstColors.a
-                      : Get.theme.colorScheme.secondary,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  '7',
-                  style: Get.theme.textTheme.headline1?.copyWith(
-                    color: Get.theme.scaffoldBackgroundColor,
-                    fontWeight: FontWeight.bold,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: _currentPart == 0
+                        ? CstColors.a
+                        : Get.theme.colorScheme.secondary,
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                ),
-              ),
+                  child: Obx(() {
+                    return Text(
+                      _controller.todayTasksNumber.value.toString(),
+                      style: Get.theme.textTheme.headline1?.copyWith(
+                        color: Get.theme.scaffoldBackgroundColor,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    );
+                  })),
               _divider(),
               GestureDetector(
                 onTap: () => setState(() {
@@ -485,6 +505,29 @@ class TasksTabPartsNavigationState extends State<_TasksTabPartsNavigation> {
                   child: const Text(
                     "All Tasks",
                   ),
+                ),
+              ),
+              const SizedBox(
+                width: 5,
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                decoration: BoxDecoration(
+                  color: _currentPart == 1
+                      ? CstColors.a
+                      : Get.theme.colorScheme.secondary,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Obx(
+                  () {
+                    return Text(
+                      _controller.allTasksNumber.value.toString(),
+                      style: Get.theme.textTheme.headline1?.copyWith(
+                        color: Get.theme.scaffoldBackgroundColor,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    );
+                  },
                 ),
               ),
               _divider(),
@@ -536,8 +579,13 @@ class TasksTabPartsNavigationState extends State<_TasksTabPartsNavigation> {
 }
 
 class _CategoryCard extends StatelessWidget {
-  const _CategoryCard({Key? key, required this.onTap}) : super(key: key);
+  const _CategoryCard({
+    Key? key,
+    required this.onTap,
+    required this.data,
+  }) : super(key: key);
   final Function() onTap;
+  final CategoryModel data;
 
   @override
   Widget build(BuildContext context) {
@@ -546,32 +594,35 @@ class _CategoryCard extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
-          color: CstColors.b,
+          color: data.color,
         ),
         padding: EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SvgPicture.asset(
                   'assets/icons/ic_fluent_archive_24_filled.svg',
                   color: Colors.white,
                   height: 13,
                 ),
-                SizedBox(
+               const  SizedBox(
                   width: 5,
                 ),
-                Text(
-                  'Work',
-                  style: Get.theme.textTheme.headline5?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    height: 1.5,
+                Expanded(
+                  child: Text(
+                    data.title!,
+                    overflow: TextOverflow.ellipsis,
+                    style: Get.theme.textTheme.headline5?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      height: 1.2,
+                    ),
                   ),
                 ),
-                Spacer(),
+                const Spacer(),
                 Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
@@ -580,7 +631,7 @@ class _CategoryCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
-                    '7',
+                    data.tasksNumber.toString(),
                     style: Get.theme.textTheme.headline1?.copyWith(
                       color: CstColors.b,
                       fontWeight: FontWeight.bold,
@@ -589,36 +640,35 @@ class _CategoryCard extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(
-              height: 5,
-            ),
-            Text(
-              'Create Project Structure \nPublish App Ui To Dribble',
-              style: Get.theme.textTheme.headline1?.copyWith(
-                color: Colors.white.withOpacity(.8),
-                decoration: TextDecoration.lineThrough,
+            if (data.threeLastTasksTitles!.isNotEmpty) ...[
+              const SizedBox(
+                height: 5,
               ),
-            ),
-            Text(
-              'Complete work flow',
-              style: Get.theme.textTheme.headline1?.copyWith(
-                color: Colors.white.withOpacity(.8),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: List.generate(
+                  data.threeLastTasksTitles!.length,
+                  (index) {
+                    final cell = data.threeLastTasksTitles!.elementAt(index);
+                    if (cell == null) return const SizedBox.shrink();
+                    return Text(
+                      cell,
+                      style: Get.theme.textTheme.headline1?.copyWith(
+                        overflow: TextOverflow.ellipsis,
+                        color: Colors.white.withOpacity(.8),
+                        decoration: TextDecoration.lineThrough,
+                      ),
+                    );
+                  },
+                ),
               ),
-            ),
-            const SizedBox(
-              height: 5,
-            ),
+              const SizedBox(
+                height: 5,
+              ),
+            ],
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                SvgPicture.asset(
-                  'assets/icons/ic_fluent_top_speed_24_filled.svg',
-                  color: Colors.white,
-                  height: 18,
-                ),
-                const SizedBox(
-                  width: 3,
-                ),
                 Text(
                   'Productivity',
                   style: Get.theme.textTheme.headline5?.copyWith(
@@ -628,15 +678,12 @@ class _CategoryCard extends StatelessWidget {
                 ),
               ],
             ),
-            // const SizedBox(
-            //   height: 3,
-            // ),
-            const Text.rich(
+            Text.rich(
               TextSpan(
                 children: [
                   TextSpan(
-                    text: '70',
-                    style: TextStyle(
+                    text: data.productivityPerCentage!.toInt().toString(),
+                    style: const TextStyle(
                       height: 1,
                       fontSize: 25,
                       color: Colors.white,
@@ -644,7 +691,7 @@ class _CategoryCard extends StatelessWidget {
                       fontWeight: FontWeight.w400,
                     ),
                   ),
-                  TextSpan(
+                  const TextSpan(
                     text: '%',
                     style: TextStyle(
                       fontSize: 12,
@@ -669,7 +716,7 @@ class _CategoryCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(5),
                   ),
                   child: FractionallySizedBox(
-                    widthFactor: .7,
+                    widthFactor: data.productivityPerCentage! * 0.01,
                     alignment: Alignment.centerLeft,
                     heightFactor: 1.0,
                     child: DecoratedBox(

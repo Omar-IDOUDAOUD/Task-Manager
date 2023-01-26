@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:task_manager/core/constants/colors.dart';
+import 'package:task_manager/data/model/task.dart';
 
 class TaskCard extends StatelessWidget {
-  const TaskCard({Key? key, this.isLive = true}) : super(key: key);
-  final bool isLive;
+  const TaskCard({Key? key, required this.data}) : super(key: key);
+
+  final TaskModel data;
 
   @override
   Widget build(BuildContext context) {
@@ -29,17 +31,18 @@ class TaskCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  'Project Work Flow',
+                  data.title!,
                   style: Get.theme.textTheme.headline5?.copyWith(
                     color: Get.theme.colorScheme.primary,
-                    decoration: isLive ? null : TextDecoration.lineThrough,
+                    decoration:
+                        data.completed! ? TextDecoration.lineThrough : null,
                   ),
                 ),
               ),
               SizedBox.square(
                 dimension: 20,
                 child: Checkbox(
-                  value: !isLive,
+                  value: data.completed,
                   onChanged: (v) => true,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
@@ -51,13 +54,16 @@ class TaskCard extends StatelessWidget {
               )
             ],
           ),
-          Text(
-            'Increase platform building work flow speed',
-            style: Get.theme.textTheme.headline2?.copyWith(
-              color: Get.theme.colorScheme.secondary,
-              decoration: isLive ? null : TextDecoration.lineThrough,
-            ),
-          ),
+          data.description != null
+              ? Text(
+                  data.description!,
+                  style: Get.theme.textTheme.headline2?.copyWith(
+                    color: Get.theme.colorScheme.secondary,
+                    decoration:
+                        data.completed! ? TextDecoration.lineThrough : null,
+                  ),
+                )
+              : const SizedBox.shrink(),
           const SizedBox(
             height: 10,
           ),
@@ -71,7 +77,7 @@ class TaskCard extends StatelessWidget {
             height: 10,
           ),
           Text(
-            'Important Task',
+            data.priority.toString() + " Task",
             style: Get.theme.textTheme.headline2?.copyWith(
               color: CstColors.c,
             ),
@@ -97,7 +103,7 @@ class TaskCard extends StatelessWidget {
               DecoratedBox(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(5),
-                  color: CstColors.b,
+                  color: data.categoryColor,
                 ),
                 child: Padding(
                   padding:
@@ -113,7 +119,7 @@ class TaskCard extends StatelessWidget {
                         width: 5,
                       ),
                       Text(
-                        'Work',
+                        data.categoryTitle!,
                         style: Get.theme.textTheme.headline2?.copyWith(
                             color: Get.theme.scaffoldBackgroundColor),
                       )

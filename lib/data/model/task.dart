@@ -2,31 +2,31 @@ import 'package:flutter/material.dart';
 
 class TaskModel {
   int? id;
-  DateTime creationDate;
-  String title;
+  DateTime? creationDate;
+  String? title;
   String? description;
   TaskPriorities? priority;
   DateTime? terminationDate;
   DateTime? completionDate;
-  bool completed;
-  int categoryId;
+  bool? completed;
+  int? categoryId;
   /**those properties is initialed whene this model is being to send to view*/
-  String? categoryTitle; 
+  String? categoryTitle;
   Color? categoryColor;
 
   TaskModel({
     this.id,
-    required this.creationDate,
+   required this.creationDate,
     required this.title,
     this.description,
     this.priority,
     this.terminationDate,
     this.completionDate,
     this.completed = false,
-    required this.categoryId,
-    this.categoryColor , 
+    this.categoryId = 1,
+    this.categoryColor,
     this.categoryTitle,
-  });
+  }); 
 
   factory TaskModel.fromMap(Map<String, dynamic> map) {
     return TaskModel(
@@ -44,16 +44,18 @@ class TaskModel {
           ? DateTime.parse(map['completion_date'])
           : null,
       completed: map['completed'] == 1,
-      categoryId: map['category_id'], 
+      categoryId: map['category_id'],
       categoryTitle: map['category_title'],
-      categoryColor: map['category_color'], 
+      categoryColor: map['category_color_code'] != null
+          ? Color(int.parse(map['category_color_code']))
+          : null,
     );
   }
 
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'creation_date': creationDate.toIso8601String(),
+      'creation_date': creationDate!.toIso8601String(),
       'title': title,
       'description': description,
       'priority': priority?.index,
@@ -61,8 +63,9 @@ class TaskModel {
       'completion_date': completionDate?.toIso8601String(),
       'completed': completed == true ? 1 : 0,
       'category_id': categoryId,
-      'category_title': categoryTitle, 
-      'category_color': categoryColor, 
+      'category_title': categoryTitle,
+      'category_color_code':
+          categoryColor != null ? categoryColor!.value : null,
     };
   }
 }
