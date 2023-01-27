@@ -1,5 +1,5 @@
-import 'dart:math';
 
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:task_manager/data/model/cotegoriy.dart';
 import 'package:task_manager/data/model/task.dart';
@@ -7,10 +7,11 @@ import 'package:task_manager/data/provider/categories_provider.dart';
 import 'package:task_manager/data/provider/tasks_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-const TODAYS_TASKS_LIST_WID_ID = "TODAYS_TASKS_LIST_WID_TAG";
+const TODAYS_TASKS_WID_ID = "TODAYS_TASKS_LIST_WID_TAG";
 const ALL_TASKS_WID_ID = "ALL_TASKS_WID_ID";
 const CATEGORIES_WID_ID = "CATEGORIES_WID_ID";
 const CATEGORYTASKS_WID_ID = "CATEGORYTASKS_WID_ID";
+const COMPLETED_TASKS_WID_ID = "COMPLETED_TASKS_WID_ID";
 
 class TasksController extends GetxController {
   final TasksProvider _tasksProvider = TasksProvider();
@@ -18,7 +19,9 @@ class TasksController extends GetxController {
   List<TaskModel>? _todayTasks;
   List<TaskModel>? _allTasks;
   List<CategoryModel>? _categories;
-  List<TaskModel>? _completedTasks;
+  List<TaskModel> _completedTasks = [];
+  int _completedTasksPaginationOffset = 0;
+  late ScrollController completedTasksScrollConntroller;
   RxInt todayTasksNumber = 0.obs;
   RxInt allTasksNumber = 0.obs;
   late final SharedPreferences _preferences;
@@ -27,6 +30,16 @@ class TasksController extends GetxController {
   void onInit() async {
     super.onInit();
     print("LOG: onInit called");
+        completedTasksScrollConntroller = ScrollController()
+      ..addListener(
+        () {
+          if ((completedTasksScrollConntroller.position.maxScrollExtent -
+                  completedTasksScrollConntroller.offset) <
+              100) {
+            update([COMPLETED_TASKS_WID_ID]);
+          }
+        },
+      );
     _preferences = await SharedPreferences.getInstance();
     print('checkpoint ppp');
     allTasksNumber = _preferences.getInt('ALL_TASKS_NUMBER')!.obs;
@@ -150,8 +163,13 @@ class TasksController extends GetxController {
 
   Future<List<TaskModel>> getCompletedTasks() async {
     await _tasksProvider.init();
-    _completedTasks = await _tasksProvider
-        .readTasks(where: 'completed = ?', whereArgs: ['1']);
-    return _completedTasks!;
+    final paginated_data = await _tasksProvider.readTasks(
+        where: 'completed = ?',
+        whereArgs: ['1'],
+        limit: 10,
+        offset: _completedTasksPaginationOffset);
+    _completedTasksPaginationOffset += 10;
+    _completedTasks.addAll(paginated_data);
+    return _completedTasks;
   }
 }
