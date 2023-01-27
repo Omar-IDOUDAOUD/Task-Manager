@@ -1,6 +1,5 @@
 import 'package:flutter/cupertino.dart'; 
 import 'package:get/get.dart';
-import 'package:task_manager/controller/home/completedtasks_controller.dart';
 import 'package:task_manager/controller/home/tasks_controller.dart';
 import 'package:task_manager/data/model/task.dart';
 import 'package:task_manager/view/home/widgets/task_card.dart';
@@ -10,7 +9,7 @@ class CompletedTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GetBuilder<CompletedTasksController>(
+    return GetBuilder<TasksController>(
       builder: (controller) {
         return FutureBuilder(
           future: controller.getCompletedTasks(),

@@ -18,6 +18,7 @@ class TasksController extends GetxController {
   List<TaskModel>? _todayTasks;
   List<TaskModel>? _allTasks;
   List<CategoryModel>? _categories;
+  List<TaskModel>? _completedTasks;
   RxInt todayTasksNumber = 0.obs;
   RxInt allTasksNumber = 0.obs;
   late final SharedPreferences _preferences;
@@ -147,5 +148,10 @@ class TasksController extends GetxController {
     return categoryTasks;
   }
 
-
+  Future<List<TaskModel>> getCompletedTasks() async {
+    await _tasksProvider.init();
+    _completedTasks = await _tasksProvider
+        .readTasks(where: 'completed = ?', whereArgs: ['1']);
+    return _completedTasks!;
+  }
 }
