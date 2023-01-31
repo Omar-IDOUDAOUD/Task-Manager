@@ -1,4 +1,4 @@
-
+ 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:task_manager/data/model/cotegoriy.dart';
@@ -16,30 +16,43 @@ const COMPLETED_TASKS_WID_ID = "COMPLETED_TASKS_WID_ID";
 class TasksController extends GetxController {
   final TasksProvider _tasksProvider = TasksProvider();
   final CategoriesProvider _categoriesProvider = CategoriesProvider();
-  List<TaskModel>? _todayTasks;
+  List<TaskModel> _todayTasks = [];
   List<TaskModel>? _allTasks;
   List<CategoryModel>? _categories;
   List<TaskModel> _completedTasks = [];
   int _completedTasksPaginationOffset = 0;
-  late ScrollController completedTasksScrollConntroller;
+  int _todayTasksPaginationOffset = 0;
+  int _categoriesPaginationOffset = 0;
+  final ScrollController completedTasksTabScrollConntroller =
+      ScrollController();
+  final ScrollController tasksTabScrollController = ScrollController();
   RxInt todayTasksNumber = 0.obs;
   RxInt allTasksNumber = 0.obs;
   late final SharedPreferences _preferences;
+  bool? canLoadMoreDataInTodaysTasksPart;
+  bool? canLoadMoreDataInAllTasksPart;
 
   @override
   void onInit() async {
     super.onInit();
     print("LOG: onInit called");
-        completedTasksScrollConntroller = ScrollController()
+    completedTasksTabScrollConntroller
       ..addListener(
         () {
-          if ((completedTasksScrollConntroller.position.maxScrollExtent -
-                  completedTasksScrollConntroller.offset) <
-              100) {
+          if ((completedTasksTabScrollConntroller.position.maxScrollExtent -
+                  completedTasksTabScrollConntroller.offset) <
+              20) {
             update([COMPLETED_TASKS_WID_ID]);
           }
         },
       );
+    tasksTabScrollController.addListener(() {
+      if ((tasksTabScrollController.position.maxScrollExtent -
+              tasksTabScrollController.offset) <
+          20) {
+        update([TODAYS_TASKS_WID_ID]);
+      }
+    });
     _preferences = await SharedPreferences.getInstance();
     print('checkpoint ppp');
     allTasksNumber = _preferences.getInt('ALL_TASKS_NUMBER')!.obs;
@@ -54,53 +67,22 @@ class TasksController extends GetxController {
     _preferences.setInt('TODAYS_TASKS_NUMBER', todayTasksNumber.value);
   }
 
-  Future<List<TaskModel>> getTodaysTasks() async {
+  Future<List<TaskModel>> getTodaysTasks(bool loadMoreData) async {
     await _tasksProvider.init();
     await _categoriesProvider.init();
 
-    _allTasks = _todayTasks = _categories = null;
-
-    if (_todayTasks == null) {
-      _todayTasks = await _tasksProvider.readTasks();
-      for (var i = 0; i < _todayTasks!.length; i++) {
-        if (_todayTasks!.elementAt(i).categoryTitle != null) continue;
-        final category = (await _categoriesProvider.readCategories(
-                where: 'id = ?',
-                whereArgs: [_todayTasks![i].categoryId],
-                columns: ['title', 'color_code']))
-            .first;
-        _todayTasks![i]
-          ..categoryTitle = category.title
-          ..categoryColor = category.color;
-        await _tasksProvider.updateTask(_todayTasks!.elementAt(i).id!,
-            (oldData) => _todayTasks!.elementAt(i));
-      }
-    }
-    todayTasksNumber.value = _todayTasks!.length;
-    return _todayTasks!;
+    if (!loadMoreData) return _todayTasks;
+    final paginated_data = await _tasksProvider.readTasks(
+        limit: 10, offset: _todayTasksPaginationOffset);
+    _todayTasksPaginationOffset += 10;
+    _todayTasks.addAll(paginated_data);
+    todayTasksNumber.value = _todayTasks.length;
+    return _todayTasks;
   }
 
   Future<List<TaskModel>> getAllTasks() async {
-    _todayTasks = _categories = _allTasks = null;
+    _allTasks = await _tasksProvider.readTasks();
 
-    if (_allTasks == null) {
-      _allTasks = await _tasksProvider.readTasks();
-      for (var i = 0; i < _allTasks!.length; i++) {
-        if (_allTasks!.elementAt(i).categoryTitle != null) continue;
-        final category = (await _categoriesProvider.readCategories(
-                where: 'id = ?',
-                whereArgs: [_allTasks![i].categoryId],
-                columns: ['title', 'color_code']))
-            .first;
-        _allTasks![i]
-          ..categoryTitle = category.title
-          ..categoryColor = category.color;
-        await _tasksProvider.updateTask(
-          _allTasks!.elementAt(i).id!,
-          (oldData) => _allTasks!.elementAt(i),
-        );
-      }
-    }
     allTasksNumber.value = _allTasks!.length;
     return _allTasks!;
   }
@@ -145,24 +127,13 @@ class TasksController extends GetxController {
     final List<TaskModel> categoryTasks = await _tasksProvider
         .readTasks(where: 'category_id = ?', whereArgs: [categoryId]);
 
-    for (var i = 0; i < categoryTasks.length; i++) {
-      if (categoryTasks.elementAt(i).categoryTitle != null) continue;
-      final category = (await _categoriesProvider.readCategories(
-              where: 'id = ?',
-              whereArgs: [categoryTasks.elementAt(i).categoryId],
-              columns: ['title', 'color_code']))
-          .first;
-      categoryTasks[i]
-        ..categoryTitle = category.title
-        ..categoryColor = category.color;
-      _tasksProvider.updateTask(categoryTasks.elementAt(i).id!,
-          (oldData) => categoryTasks.elementAt(i));
-    }
     return categoryTasks;
   }
 
-  Future<List<TaskModel>> getCompletedTasks() async {
+  Future<List<TaskModel>> getCompletedTasks(bool loadMoreData) async {
     await _tasksProvider.init();
+
+    if (!loadMoreData) return _completedTasks;
     final paginated_data = await _tasksProvider.readTasks(
         where: 'completed = ?',
         whereArgs: ['1'],
@@ -171,5 +142,17 @@ class TasksController extends GetxController {
     _completedTasksPaginationOffset += 10;
     _completedTasks.addAll(paginated_data);
     return _completedTasks;
+  }
+
+  Future<void> createTask(TaskModel data) async {
+    final category = (await _categoriesProvider.readCategories(
+            where: 'id = ?',
+            whereArgs: [data.categoryId],
+            columns: ['title', 'color_code']))
+        .first;
+    data
+      ..categoryTitle = category.title
+      ..categoryColor = category.color;
+    _tasksProvider.createTask(data);
   }
 }
