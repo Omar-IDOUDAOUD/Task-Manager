@@ -26,6 +26,8 @@ class _TasksTabState extends State<TasksTab>
 
   late AnimationController _partsNavigationTopBarAnCtrl;
 
+  final _partsFadeTransitionDuration = 500.milliseconds;
+
   @override
   void initState() {
     super.initState();
@@ -39,8 +41,6 @@ class _TasksTabState extends State<TasksTab>
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        // SingleChildScrollView(
-        //   physics: BouncingScrollPhysics(),
         AnimatedSwitcher(
           layoutBuilder: (currentChild, previousChild) {
             return Align(
@@ -48,7 +48,7 @@ class _TasksTabState extends State<TasksTab>
               child: currentChild,
             );
           },
-          duration: 500.milliseconds,
+          duration: _partsFadeTransitionDuration,
           transitionBuilder: (child, animation) {
             return FadeTransition(
               opacity: animation,
@@ -89,12 +89,15 @@ class _TasksTabState extends State<TasksTab>
           child: _TasksTabPartsNavigation(
             specificCategoryName:
                 _categorySelectedId != null ? _categorySelectedTitle : null,
-            onChangedPart: (newPart) => setState(
-              () {
-                _currentPart = newPart;
-                _categorySelectedId = null;
-              },
-            ),
+            onChangedPart: (newPart) {
+              if (_currentPart != newPart)
+                setState(
+                  () {
+                    _currentPart = newPart;
+                    _categorySelectedId = null;
+                  },
+                );
+            },
           ),
         ),
         Positioned(
@@ -149,6 +152,7 @@ class _TasksTabState extends State<TasksTab>
   _Categories? _categoriesWidget;
 
   _getCurrentTabPart() {
+    _partsNavigationTopBarAnCtrl.reverse();
     if (_categorySelectedId != null)
       return _SpecificCategoryTasks(
         categoryId: _categorySelectedId!,
@@ -162,11 +166,13 @@ class _TasksTabState extends State<TasksTab>
     } else if (_currentPart == 1) {
       _allTasksWidget ??= _AllTasks(
         controller: _controller,
+        scrollListener: _tabScrollListener,
       );
       return _allTasksWidget;
     } else if (_currentPart == 2) {
       _categoriesWidget ??= _Categories(
         controller: _controller,
+        scrollListener: _tabScrollListener,
         onSelectedCatecory: (id, categoryTitle) {
           setState(() {
             _categorySelectedId = id;
@@ -199,10 +205,11 @@ class _TodayTasks extends StatelessWidget {
       init: controller,
       builder: (controller) {
         return ListView(
-          controller: controller.tasksTabScrollController
+          controller: controller.tasksTabToaysTasksScrollController
             ..addListener(() {
               if (scrollListener != null)
-                scrollListener!(controller.tasksTabScrollController.offset);
+                scrollListener!(
+                    controller.tasksTabToaysTasksScrollController.offset);
             }),
           padding:
               const EdgeInsets.only(top: 70, bottom: 25, left: 25, right: 25),
@@ -217,17 +224,35 @@ class _TodayTasks extends StatelessWidget {
             FutureBuilder<List<TaskModel>>(
               future: controller.getTodaysTasks(_getCanLoadMoreData),
               builder: (ctx, screenShot) {
-                if (!screenShot.hasData)
-                  return Center(
-                    child: CupertinoActivityIndicator(),
-                  );
                 return Column(
-                  children: List.generate(
-                    screenShot.data!.length,
-                    (index) => TaskCard(
-                      data: screenShot.data!.elementAt(index),
-                    ),
-                  ),
+                  children: [
+                    if (screenShot.hasData)
+                      ...List.generate(
+                        screenShot.data!.length,
+                        (index) => Padding(
+                          padding: EdgeInsets.only(bottom: 20),
+                          child: TaskCard(
+                            data: screenShot.data!.elementAt(index),
+                          ),
+                        ),
+                      ),
+                    if (screenShot.connectionState == ConnectionState.waiting)
+                      const Padding(
+                        padding: EdgeInsets.all(10),
+                        child: CupertinoActivityIndicator(),
+                      ),
+                    // AnimatedScale(
+                    //   scale:
+                    //       screenShot.connectionState == ConnectionState.waiting
+                    //           ? 1
+                    //           : 0,
+                    //   duration: 500.milliseconds,
+                    //   child: const Padding(
+                    //     padding: EdgeInsets.all(10),
+                    //     child: CupertinoActivityIndicator(),
+                    //   ),
+                    // ),
+                  ],
                 );
               },
             ),
@@ -240,20 +265,33 @@ class _TodayTasks extends StatelessWidget {
 }
 
 class _AllTasks extends StatelessWidget {
-  const _AllTasks({Key? key, required this.controller}) : super(key: key);
+  const _AllTasks({Key? key, required this.controller, this.scrollListener})
+      : super(key: key);
+  final Function(double scrollOffset)? scrollListener;
 
-  final TasksController controller; 
+  final TasksController controller;
   bool get _getCanLoadMoreData {
-    var copy = controller.canLoadMoreDataInTodaysTasksPart;
-    controller.canLoadMoreDataInTodaysTasksPart = true;
+    var copy = controller.canLoadMoreDataInAllTasksPart;
+    controller.canLoadMoreDataInAllTasksPart = true;
     return copy ?? true;
   }
+
   @override
   Widget build(BuildContext context) {
+    if (controller.canLoadMoreDataInAllTasksPart != null)
+      controller.canLoadMoreDataInAllTasksPart = false;
     return GetBuilder<TasksController>(
       init: controller,
       builder: (controller) {
-        return Column(
+        return ListView(
+          controller: controller.tasksTabAllTasksScrollController
+            ..addListener(() {
+              if (scrollListener != null)
+                scrollListener!(
+                    controller.tasksTabAllTasksScrollController.offset);
+            }),
+          padding:
+              const EdgeInsets.only(top: 70, bottom: 25, left: 25, right: 25),
           children: [
             _Title(
               title: "All Tasks",
@@ -263,19 +301,22 @@ class _AllTasks extends StatelessWidget {
               height: 20,
             ),
             FutureBuilder<List<TaskModel>>(
-              future: controller.getAllTasks(),
+              future: controller.getAllTasks(_getCanLoadMoreData),
               builder: (ctx, screenShot) {
-                if (!screenShot.hasData)
-                  return Center(
-                    child: CupertinoActivityIndicator(),
-                  );
                 return Column(
-                  children: List.generate(
-                    screenShot.data!.length,
-                    (index) => TaskCard(
-                      data: screenShot.data!.elementAt(index),
+                  children: [
+                    ...List.generate(
+                      screenShot.data!.length,
+                      (index) => TaskCard(
+                        data: screenShot.data!.elementAt(index),
+                      ),
                     ),
-                  ),
+                    if (screenShot.connectionState == ConnectionState.waiting)
+                      const Padding(
+                        padding: EdgeInsets.all(10),
+                        child: CupertinoActivityIndicator(),
+                      ),
+                  ],
                 );
               },
             ),
@@ -288,38 +329,64 @@ class _AllTasks extends StatelessWidget {
 }
 
 class _Categories extends StatelessWidget {
-  const _Categories(
-      {Key? key, required this.onSelectedCatecory, required this.controller})
-      : super(key: key);
+  const _Categories({
+    Key? key,
+    required this.onSelectedCatecory,
+    required this.controller,
+    this.scrollListener,
+  }) : super(key: key);
   final TasksController controller;
+  final Function(double scrollOffset)? scrollListener;
   final Function(int id, String categoryTitle) onSelectedCatecory;
+  bool get _getCanLoadMoreData {
+    var copy = controller.canLoadMoreDataInCategoriesPart;
+    controller.canLoadMoreDataInCategoriesPart = true;
+    return copy ?? true;
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (controller.canLoadMoreDataInCategoriesPart != null)
+      controller.canLoadMoreDataInCategoriesPart = false;
     return GetBuilder<TasksController>(
       init: controller,
-      builder: (controller) => FutureBuilder<List<CategoryModel>>(
-        future: controller.getCategories(),
-        builder: (ctx, screenShot) {
-          if (!screenShot.hasData)
-            return Center(
-              child: CupertinoActivityIndicator(),
+      builder: (controller) => SingleChildScrollView(
+        controller: controller.tasksTabCategoriesScrollController
+          ..addListener(() {
+            if (scrollListener != null)
+              scrollListener!(
+                  controller.tasksTabCategoriesScrollController.offset);
+          }),
+        padding:
+            const EdgeInsets.only(top: 70, bottom: 25, left: 25, right: 25),
+        child: FutureBuilder<List<CategoryModel>>(
+          future: controller.getCategories(_getCanLoadMoreData),
+          builder: (ctx, screenShot) {
+            return Column(
+              children: [
+                StaggeredGrid.count(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 10,
+                  crossAxisSpacing: 10,
+                  children: List.generate(
+                    screenShot.data!.length,
+                    (index) => _CategoryCard(
+                      onTap: () => onSelectedCatecory(
+                          screenShot.data!.elementAt(index).id!,
+                          screenShot.data!.elementAt(index).title!),
+                      data: screenShot.data!.elementAt(index),
+                    ),
+                  ),
+                ),
+                if (screenShot.connectionState == ConnectionState.waiting)
+                  const Padding(
+                    padding: EdgeInsets.all(10),
+                    child: CupertinoActivityIndicator(),
+                  ),
+              ],
             );
-          return StaggeredGrid.count(
-            crossAxisCount: 2,
-            mainAxisSpacing: 10,
-            crossAxisSpacing: 10,
-            children: List.generate(
-              screenShot.data!.length,
-              (index) => _CategoryCard(
-                onTap: () => onSelectedCatecory(
-                    screenShot.data!.elementAt(index).id!,
-                    screenShot.data!.elementAt(index).title!),
-                data: screenShot.data!.elementAt(index),
-              ),
-            ),
-          );
-        },
+          },
+        ),
       ),
       id: CATEGORIES_WID_ID,
     );
