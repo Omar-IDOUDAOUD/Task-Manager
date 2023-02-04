@@ -90,6 +90,7 @@ class _TasksTabState extends State<TasksTab>
             specificCategoryName:
                 _categorySelectedId != null ? _categorySelectedTitle : null,
             onChangedPart: (newPart) {
+              if(_categorySelectedId != null) _controller.deleteLastSavedCategoryTasks();
               if (_currentPart != newPart)
                 setState(
                   () {
@@ -194,12 +195,6 @@ class _TodayTasks extends StatelessWidget {
       : super(key: key);
   final TasksController controller;
   final Function(double scrollOffset)? scrollListener;
-  // int _lastLoadedDataLength = 0;
-  // int _getLastLoadedDataLength(newValue) {
-  //   final copy = _lastLoadedDataLength;
-  //   _lastLoadedDataLength = newValue;
-  //   return copy;
-  // }
 
   bool get _getCanLoadMoreData {
     final copy = controller.canLoadMoreDataInTodaysTasksPart;
