@@ -191,8 +191,15 @@ class _TodayTasks extends StatelessWidget {
       : super(key: key);
   final TasksController controller;
   final Function(double scrollOffset)? scrollListener;
+  // int _lastLoadedDataLength = 0;
+  // int _getLastLoadedDataLength(newValue) {
+  //   final copy = _lastLoadedDataLength;
+  //   _lastLoadedDataLength = newValue;
+  //   return copy;
+  // }
+
   bool get _getCanLoadMoreData {
-    var copy = controller.canLoadMoreDataInTodaysTasksPart;
+    final copy = controller.canLoadMoreDataInTodaysTasksPart;
     controller.canLoadMoreDataInTodaysTasksPart = true;
     return copy ?? true;
   }
@@ -241,17 +248,6 @@ class _TodayTasks extends StatelessWidget {
                         padding: EdgeInsets.all(10),
                         child: CupertinoActivityIndicator(),
                       ),
-                    // AnimatedScale(
-                    //   scale:
-                    //       screenShot.connectionState == ConnectionState.waiting
-                    //           ? 1
-                    //           : 0,
-                    //   duration: 500.milliseconds,
-                    //   child: const Padding(
-                    //     padding: EdgeInsets.all(10),
-                    //     child: CupertinoActivityIndicator(),
-                    //   ),
-                    // ),
                   ],
                 );
               },
@@ -305,6 +301,7 @@ class _AllTasks extends StatelessWidget {
               builder: (ctx, screenShot) {
                 return Column(
                   children: [
+                    if(screenShot.hasData)
                     ...List.generate(
                       screenShot.data!.length,
                       (index) => TaskCard(
@@ -364,6 +361,7 @@ class _Categories extends StatelessWidget {
           builder: (ctx, screenShot) {
             return Column(
               children: [
+                if(screenShot.hasData)
                 StaggeredGrid.count(
                   crossAxisCount: 2,
                   mainAxisSpacing: 10,
@@ -378,11 +376,11 @@ class _Categories extends StatelessWidget {
                     ),
                   ),
                 ),
-                if (screenShot.connectionState == ConnectionState.waiting)
-                  const Padding(
-                    padding: EdgeInsets.all(10),
-                    child: CupertinoActivityIndicator(),
-                  ),
+                   if (screenShot.connectionState == ConnectionState.waiting)
+                      const Padding(
+                        padding: EdgeInsets.all(10),
+                        child: CupertinoActivityIndicator(),
+                      ),
               ],
             );
           },
