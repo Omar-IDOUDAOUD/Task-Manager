@@ -21,10 +21,12 @@ class TasksController extends GetxController {
   List<TaskModel> _allTasks = [];
   List<CategoryModel> _categories = [];
   List<TaskModel> _completedTasks = [];
+  List<TaskModel> _categoryTasks = [];
   int _completedTabPaginationOffset = 0;
   int _tasksTabTodayTasksPaginationOffset = 0;
   int _tasksTabAllTasksPaginationOffset = 0;
   int _tasksTabCategoriesPaginationOffset = 0;
+  int _categoryTasksPagintionOffset = 0;
   final ScrollController completedTasksTabScrollConntroller =
       ScrollController();
   final ScrollController tasksTabToaysTasksScrollController =
@@ -32,12 +34,14 @@ class TasksController extends GetxController {
   final ScrollController tasksTabAllTasksScrollController = ScrollController();
   final ScrollController tasksTabCategoriesScrollController =
       ScrollController();
+  final ScrollController categoryTasksScrollController = ScrollController();
   RxInt todayTasksNumber = 0.obs;
   RxInt allTasksNumber = 0.obs;
   late final SharedPreferences _preferences;
   bool? canLoadMoreDataInTodaysTasksPart;
   bool? canLoadMoreDataInAllTasksPart;
   bool? canLoadMoreDataInCategoriesPart;
+  bool? canLoadMoreDataInCategoryTasks;
 
   @override
   void onInit() async {
@@ -72,6 +76,13 @@ class TasksController extends GetxController {
               tasksTabCategoriesScrollController.offset) <
           20) {
         update([CATEGORIES_WID_ID]);
+      }
+    });
+    categoryTasksScrollController.addListener(() {
+      if ((categoryTasksScrollController.position.maxScrollExtent -
+              categoryTasksScrollController.offset) <
+          20) {
+        update([CATEGORYTASKS_WID_ID]);
       }
     });
     _preferences = await SharedPreferences.getInstance();
@@ -150,11 +161,28 @@ class TasksController extends GetxController {
     return _categories;
   }
 
-  Future<List<TaskModel>> getCategoryTasks(int categoryId) async {
-    final List<TaskModel> categoryTasks = await _tasksProvider
-        .readTasks(where: 'category_id = ?', whereArgs: [categoryId]);
 
-    return categoryTasks;
+  Future<List<TaskModel>> getCategoryTasks(
+      int categoryId, bool loadMoreData) async {
+    print('controller called');
+    if (!loadMoreData) return _categoryTasks;
+      final List<TaskModel> paginated_data = await _tasksProvider.readTasks(
+        where: 'category_id = ?',
+        whereArgs: [categoryId],
+        limit: 10,
+        offset: _categoryTasksPagintionOffset,
+      );
+      _categoryTasksPagintionOffset += 10;
+      _categoryTasks.addAll(paginated_data);
+
+
+    return _categoryTasks;
+  }
+
+  void deleteLastSavedCategoryTasks() {
+    _categoryTasksPagintionOffset = 0;
+    canLoadMoreDataInCategoryTasks = null; 
+    _categoryTasks.clear();
   }
 
   Future<List<TaskModel>> getCompletedTasks(bool loadMoreData) async {

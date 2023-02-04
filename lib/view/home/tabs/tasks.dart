@@ -109,6 +109,7 @@ class _TasksTabState extends State<TasksTab>
             scale: _categorySelectedId != null ? 1 : 0,
             child: GestureDetector(
               onTap: () {
+                _controller.deleteLastSavedCategoryTasks(); 
                 setState(() {
                   _categorySelectedId = null;
                 });
@@ -156,6 +157,8 @@ class _TasksTabState extends State<TasksTab>
     if (_categorySelectedId != null)
       return _SpecificCategoryTasks(
         categoryId: _categorySelectedId!,
+        controller: _controller,
+        scrollListener: _tabScrollListener,
       );
     if (_currentPart == 0) {
       _todayTasksWidget ??= _TodayTasks(
@@ -301,13 +304,13 @@ class _AllTasks extends StatelessWidget {
               builder: (ctx, screenShot) {
                 return Column(
                   children: [
-                    if(screenShot.hasData)
-                    ...List.generate(
-                      screenShot.data!.length,
-                      (index) => TaskCard(
-                        data: screenShot.data!.elementAt(index),
+                    if (screenShot.hasData)
+                      ...List.generate(
+                        screenShot.data!.length,
+                        (index) => TaskCard(
+                          data: screenShot.data!.elementAt(index),
+                        ),
                       ),
-                    ),
                     if (screenShot.connectionState == ConnectionState.waiting)
                       const Padding(
                         padding: EdgeInsets.all(10),
@@ -361,26 +364,26 @@ class _Categories extends StatelessWidget {
           builder: (ctx, screenShot) {
             return Column(
               children: [
-                if(screenShot.hasData)
-                StaggeredGrid.count(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 10,
-                  crossAxisSpacing: 10,
-                  children: List.generate(
-                    screenShot.data!.length,
-                    (index) => _CategoryCard(
-                      onTap: () => onSelectedCatecory(
-                          screenShot.data!.elementAt(index).id!,
-                          screenShot.data!.elementAt(index).title!),
-                      data: screenShot.data!.elementAt(index),
+                if (screenShot.hasData)
+                  StaggeredGrid.count(
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 10,
+                    crossAxisSpacing: 10,
+                    children: List.generate(
+                      screenShot.data!.length,
+                      (index) => _CategoryCard(
+                        onTap: () => onSelectedCatecory(
+                            screenShot.data!.elementAt(index).id!,
+                            screenShot.data!.elementAt(index).title!),
+                        data: screenShot.data!.elementAt(index),
+                      ),
                     ),
                   ),
-                ),
-                   if (screenShot.connectionState == ConnectionState.waiting)
-                      const Padding(
-                        padding: EdgeInsets.all(10),
-                        child: CupertinoActivityIndicator(),
-                      ),
+                if (screenShot.connectionState == ConnectionState.waiting)
+                  const Padding(
+                    padding: EdgeInsets.all(10),
+                    child: CupertinoActivityIndicator(),
+                  ),
               ],
             );
           },
@@ -392,30 +395,56 @@ class _Categories extends StatelessWidget {
 }
 
 class _SpecificCategoryTasks extends StatelessWidget {
-  const _SpecificCategoryTasks({Key? key, required this.categoryId})
+  const _SpecificCategoryTasks(
+      {Key? key,
+      required this.categoryId,
+      this.scrollListener,
+      required this.controller})
       : super(key: key);
   final int categoryId;
+  final Function(double scrollOffset)? scrollListener;
+
+  final TasksController controller;
+  bool get _getCanLoadMoreData {
+    var copy = controller.canLoadMoreDataInCategoryTasks;
+    controller.canLoadMoreDataInCategoryTasks = true;
+    return copy ?? true;
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (controller.canLoadMoreDataInCategoryTasks != null)
+      controller.canLoadMoreDataInCategoryTasks = false;
     return GetBuilder<TasksController>(
-      builder: (controller) => FutureBuilder<List<TaskModel>>(
-        future: controller.getCategoryTasks(categoryId),
-        builder: (ctx, screenShot) {
-          if (!screenShot.hasData)
-            return Center(
-              child: CupertinoActivityIndicator(),
+      builder: (controller) => SingleChildScrollView(
+        controller: controller.categoryTasksScrollController
+          ..addListener(() {
+            if (scrollListener != null)
+              scrollListener!(controller.categoryTasksScrollController.offset);
+          }),
+        padding:
+            const EdgeInsets.only(top: 70, bottom: 25, left: 25, right: 25),
+        child: FutureBuilder<List<TaskModel>>(
+          future: controller.getCategoryTasks(categoryId, _getCanLoadMoreData),
+          builder: (ctx, screenShot) {
+            return Column(
+              children: [
+                if (screenShot.hasData)
+                  ...List.generate(
+                    screenShot.data!.length,
+                    (index) => TaskCard(
+                      data: screenShot.data!.elementAt(index),
+                    ),
+                  ),
+                if (screenShot.connectionState == ConnectionState.waiting)
+                  const Padding(
+                    padding: EdgeInsets.all(10),
+                    child: CupertinoActivityIndicator(),
+                  ),
+              ],
             );
-
-          return Column(
-            children: List.generate(
-              screenShot.data!.length,
-              (index) => TaskCard(
-                data: screenShot.data!.elementAt(index),
-              ),
-            ),
-          );
-        },
+          },
+        ),
       ),
       id: CATEGORYTASKS_WID_ID,
     );
