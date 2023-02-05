@@ -16,14 +16,19 @@ class CategoriesProvider extends ModelProvider {
   @override
   Database? get db => _db;
 
+  bool _initializing = false;
+
+
   @override
   FutureOr<void> init() async {
-    if (isInitialized) {
+    if (isInitialized || _initializing) {
       print('LOG: CategoriesProvider already initialized.');
       return;
     }
+    _initializing = true; 
     _sqlDbConnector ??= SQLiteConnectionService.instance;
     _db = (await _sqlDbConnector!.db)!;
+    _initializing = false; 
     print('LOG: CategoriesProvider initialized.');
   }
 

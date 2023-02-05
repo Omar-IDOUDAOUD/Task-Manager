@@ -21,17 +21,23 @@ class TasksProvider extends ModelProvider {
 
   @override
   bool get isInitialized => _db != null ? _db!.isOpen : false;
+
+  
   @override
   Database? get db => _db;
 
+  bool _initializing = false;
+
   @override
   FutureOr<void> init() async {
-    if (isInitialized) {
+    if (isInitialized || _initializing) {
       print('LOG: TasksProvider already initialized.');
       return;
     }
+    _initializing = true; 
     _sqlDbConnector ??= SQLiteConnectionService.instance;
     _db = (await _sqlDbConnector!.db)!;
+    _initializing = false; 
     print('LOG: TasksProvider initialized.');
   }
 

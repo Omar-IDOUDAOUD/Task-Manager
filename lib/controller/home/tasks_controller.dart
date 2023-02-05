@@ -46,9 +46,8 @@ class TasksController extends GetxController {
   @override
   void onInit() async {
     super.onInit();
-    print("LOG: onInit called");
     completedTasksTabScrollConntroller
-      ..addListener(
+      .addListener(
         () {
           if ((completedTasksTabScrollConntroller.position.maxScrollExtent -
                   completedTasksTabScrollConntroller.offset) <
@@ -85,33 +84,28 @@ class TasksController extends GetxController {
         update([CATEGORYTASKS_WID_ID]);
       }
     });
-    _preferences = await SharedPreferences.getInstance();
-    print('checkpoint ppp');
-    allTasksNumber = _preferences.getInt('ALL_TASKS_NUMBER')!.obs;
-    todayTasksNumber = _preferences.getInt('TODAYS_TASKS_NUMBER')!.obs;
-  }
-
-  @override
-  void onClose() {
-    super.onClose();
-    print('LOG: onClose called');
-    _preferences.setInt('ALL_TASKS_NUMBER', allTasksNumber.value);
-    _preferences.setInt('TODAYS_TASKS_NUMBER', todayTasksNumber.value);
+    await _tasksProvider.init();
+    await _categoriesProvider.init();
+    setTodaysTasksLength();
+    setAllTasksLength();
   }
 
   Future<List<TaskModel>> getTodaysTasks(bool loadMoreData) async {
     await _tasksProvider.init();
     await _categoriesProvider.init();
 
-    // await Future.delayed(4.seconds);
-
     if (!loadMoreData) return _todayTasks;
     final paginated_data = await _tasksProvider.readTasks(
         limit: 10, offset: _tasksTabTodayTasksPaginationOffset);
     _tasksTabTodayTasksPaginationOffset += 10;
     _todayTasks.addAll(paginated_data);
-    todayTasksNumber.value = _todayTasks.length;
     return _todayTasks;
+  }
+
+  Future setTodaysTasksLength() async {
+    final l = await _tasksProvider.db!
+        .rawQuery('SELECT count(`id`) as c from `${_tasksProvider.tableName}`');
+    todayTasksNumber.value = int.parse(l.first['c'].toString());
   }
 
   Future<List<TaskModel>> getAllTasks(bool loadMoreData) async {
@@ -120,8 +114,13 @@ class TasksController extends GetxController {
         limit: 10, offset: _tasksTabAllTasksPaginationOffset);
     _tasksTabAllTasksPaginationOffset += 10;
     _allTasks.addAll(paginated_data);
-    allTasksNumber.value = _allTasks.length;
     return _allTasks;
+  }
+
+  Future setAllTasksLength() async {
+    final l = await _tasksProvider.db!
+        .rawQuery('SELECT count(`id`) as c from `${_tasksProvider.tableName}`');
+    allTasksNumber.value = int.parse(l.first['c'].toString());
   }
 
   Future<List<CategoryModel>> getCategories(bool loadMoreData) async {
@@ -161,27 +160,25 @@ class TasksController extends GetxController {
     return _categories;
   }
 
-
   Future<List<TaskModel>> getCategoryTasks(
       int categoryId, bool loadMoreData) async {
     print('controller called');
     if (!loadMoreData) return _categoryTasks;
-      final List<TaskModel> paginated_data = await _tasksProvider.readTasks(
-        where: 'category_id = ?',
-        whereArgs: [categoryId],
-        limit: 10,
-        offset: _categoryTasksPagintionOffset,
-      );
-      _categoryTasksPagintionOffset += 10;
-      _categoryTasks.addAll(paginated_data);
-
+    final List<TaskModel> paginated_data = await _tasksProvider.readTasks(
+      where: 'category_id = ?',
+      whereArgs: [categoryId],
+      limit: 10,
+      offset: _categoryTasksPagintionOffset,
+    );
+    _categoryTasksPagintionOffset += 10;
+    _categoryTasks.addAll(paginated_data);
 
     return _categoryTasks;
   }
 
   void deleteLastSavedCategoryTasks() {
     _categoryTasksPagintionOffset = 0;
-    canLoadMoreDataInCategoryTasks = null; 
+    canLoadMoreDataInCategoryTasks = null;
     _categoryTasks.clear();
   }
 
