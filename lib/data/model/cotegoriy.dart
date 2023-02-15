@@ -13,7 +13,7 @@ class CategoryModel {
     this.color,
     this.title,
     this.productivityPerCentage,
-    this.tasksNumber,
+    this.tasksNumber = 0,
     this.threeLastTasksTitles = const [null, null, null],
   });
 

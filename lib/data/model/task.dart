@@ -10,14 +10,15 @@ class TaskModel {
   DateTime? completionDate;
   bool? completed;
   int? categoryId;
+  bool? sendAlert; 
   /**those properties is initialed whene this model is being to send to view*/
   String? categoryTitle;
   Color? categoryColor;
 
   TaskModel({
     this.id,
-   required this.creationDate,
-    required this.title,
+    this.creationDate,
+    this.title,
     this.description,
     this.priority,
     this.terminationDate,
@@ -26,7 +27,11 @@ class TaskModel {
     this.categoryId = 1,
     this.categoryColor,
     this.categoryTitle,
-  }); 
+    this.sendAlert = true, 
+  }) {
+    final now = DateTime.now();
+    creationDate ??= now;
+  }
 
   factory TaskModel.fromMap(Map<String, dynamic> map) {
     return TaskModel(
@@ -49,6 +54,7 @@ class TaskModel {
       categoryColor: map['category_color_code'] != null
           ? Color(int.parse(map['category_color_code']))
           : null,
+      sendAlert: map['send_alert'] == 1, 
     );
   }
 
@@ -61,11 +67,12 @@ class TaskModel {
       'priority': priority?.index,
       'termination_date': terminationDate?.toIso8601String(),
       'completion_date': completionDate?.toIso8601String(),
-      'completed': completed == true ? 1 : 0,
+      'completed': completed! ? 1 : 0,
       'category_id': categoryId,
       'category_title': categoryTitle,
       'category_color_code':
           categoryColor != null ? categoryColor!.value : null,
+      'send_alert': sendAlert! ? 1 : 0, 
     };
   }
 }

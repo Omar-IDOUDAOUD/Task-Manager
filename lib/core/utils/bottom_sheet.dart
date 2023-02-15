@@ -16,7 +16,9 @@ class BottomSheet {
     Function()? onCancelClick,
     String? okLabel,
     String? cancelLabel,
+    Function()? onDismiss, 
   }) {
+    onDismiss ??= (){}; 
     Get.bottomSheet(
       DecoratedBox(
         decoration: BoxDecoration(
@@ -50,7 +52,7 @@ class BottomSheet {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  SizedBox(
+                  const SizedBox(
                     width: 15,
                   ),
                   SizedBox.square(
@@ -69,9 +71,9 @@ class BottomSheet {
                               ),
                             ),
                           )
-                        : SizedBox.shrink(),
+                        : const SizedBox.shrink(),
                   ),
-                  Spacer(),
+                  const Spacer(),
                   Text(
                     title,
                     textAlign: TextAlign.center,
@@ -82,7 +84,7 @@ class BottomSheet {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  Spacer(),
+                  const Spacer(),
                   SizedBox.square(
                     dimension: 20,
                     child: onOkClick != null
@@ -99,9 +101,9 @@ class BottomSheet {
                               ),
                             ),
                           )
-                        : SizedBox.shrink(),
+                        : const SizedBox.shrink(),
                   ),
-                  SizedBox(
+                  const SizedBox(
                     width: 15,
                   ),
                 ],
@@ -112,7 +114,7 @@ class BottomSheet {
                   maxHeight: Get.size.height - 150,
                 ),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
                   child: SingleChildScrollView(
                     child: child,
                   ),
@@ -125,7 +127,7 @@ class BottomSheet {
       isScrollControlled: true,
       ignoreSafeArea: ignoreSafeArea ?? false,
       isDismissible: isDismissible ?? true,
-      barrierColor: Colors.transparent,
-    );
+      barrierColor: Colors.transparent, 
+    ).whenComplete(onDismiss);
   }
 }

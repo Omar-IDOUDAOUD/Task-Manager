@@ -5,9 +5,10 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:task_manager/controller/home/tasks_controller.dart';
 import 'package:task_manager/core/constants/colors.dart';
+import 'package:task_manager/core/utils/bottom_sheet.dart' as CoreUtils;
 import 'package:task_manager/data/model/cotegoriy.dart';
 import 'package:task_manager/data/model/task.dart';
-import 'package:task_manager/view/home/new_task_bottom_sheet.dart';
+import 'package:task_manager/view/home/bottomsheets/new_task_bottom_sheet.dart';
 import 'package:task_manager/view/home/widgets/task_card.dart';
 
 /// MAIN ABSTRACT
@@ -90,7 +91,8 @@ class _TasksTabState extends State<TasksTab>
             specificCategoryName:
                 _categorySelectedId != null ? _categorySelectedTitle : null,
             onChangedPart: (newPart) {
-              if(_categorySelectedId != null) _controller.deleteLastSavedCategoryTasks();
+              if (_categorySelectedId != null)
+                _controller.deleteLastSavedCategoryTasks();
               if (_currentPart != newPart)
                 setState(
                   () {
@@ -110,7 +112,7 @@ class _TasksTabState extends State<TasksTab>
             scale: _categorySelectedId != null ? 1 : 0,
             child: GestureDetector(
               onTap: () {
-                _controller.deleteLastSavedCategoryTasks(); 
+                _controller.deleteLastSavedCategoryTasks();
                 setState(() {
                   _categorySelectedId = null;
                 });
@@ -209,6 +211,7 @@ class _TodayTasks extends StatelessWidget {
     return GetBuilder<TasksController>(
       init: controller,
       builder: (controller) {
+        print('rebuild todaystasks widget');
         return ListView(
           controller: controller.tasksTabToaysTasksScrollController
             ..addListener(() {
@@ -495,11 +498,46 @@ class __AddTaskButtonState extends State<_AddTaskButton> {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        Get.bottomSheet(NewTaskBottomSheetWidget(),
-            isScrollControlled: true,
-            ignoreSafeArea: true,
-            isDismissible: true,
-            barrierColor: Colors.transparent);
+      
+          NewTaskBottomSheet.open(); 
+       
+        // CoreUtils.BottomSheet.open(
+        //   Column(
+        //     children: [
+        //       Container(
+        //         height: 150,
+        //         width: 200,
+        //         color: Colors.blue,
+        //       ),
+        //       Container(
+        //         height: 150,
+        //         width: 200,
+        //         color: Colors.purple,
+        //       ),
+        //       Container(
+        //         height: 150,
+        //         width: 200,
+        //         color: Colors.green,
+        //       ),
+        //       Container(
+        //         height: 150,
+        //         width: 200,
+        //         color: Colors.blue,
+        //       ),
+        //       Container(
+        //         height: 150,
+        //         width: 200,
+        //         color: Colors.purple,
+        //       ),
+        //       Container(
+        //         height: 150,
+        //         width: 200,
+        //         color: Colors.green,
+        //       )
+        //     ],
+        //   ),
+        //   title: 'test bottom sheet',
+        // );
       },
       onTapDown: (dts) {
         setState(() {

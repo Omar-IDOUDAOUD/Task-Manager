@@ -15,6 +15,7 @@ const String TASKS_TABLE_CREATE_SQLQUERY = """
         completion_date  DATETIME,
         completed  INTEGER NOT NULL DEFAULT 0,
         category_title TEXT,
+        send_alert INTEGER NOT NULL DEFAULT 1, 
         category_color_code TEXT,
           FOREIGN KEY (category_id)
           REFERENCES  Categories  (id)
@@ -46,7 +47,7 @@ class SQLiteConnectionService {
     return _instance!;
   }
 
-  static const DATABASE_NAME = "TaskManagerSqlDbTestingv38.db";
+  static const DATABASE_NAME = "TaskManagerSqlDbTestingv39.db";
   static const DATABASE_VERSION = 1;
   Database? _db;
 

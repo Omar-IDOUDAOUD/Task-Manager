@@ -1,8 +1,3 @@
-
-
-
-
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -12,7 +7,7 @@ class CustomTextField extends StatelessWidget {
       this.controller,
       this.textHint,
       this.minLines = 1,
-      this.maxLines = 1,
+      this.maxLines,
       this.expands = false,
       this.maxLength})
       : super(key: key);

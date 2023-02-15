@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import 'package:task_manager/core/constants/colors.dart';
 import 'package:task_manager/data/model/task.dart';
 
@@ -77,29 +79,34 @@ class TaskCard extends StatelessWidget {
             height: 10,
           ),
           Text(
-            data.priority.toString() + " Task",
+            _getPriorityString,
             style: Get.theme.textTheme.headline2?.copyWith(
-              color: CstColors.c,
+              color: _getPriorityColor,
             ),
           ),
           Row(
             children: [
-              Text(
-                'Today',
-                style: Get.theme.textTheme.headline5?.copyWith(
-                  color: Get.theme.colorScheme.secondary,
+              // completetion date
+              if (data.completionDate != null) ...[
+                Text(
+                  data.completionDate!.day == DateTime.now().day
+                      ? 'Today'
+                      : DateFormat.EEEE().format(data.completionDate!),
+                  style: Get.theme.textTheme.headline5?.copyWith(
+                    color: Get.theme.colorScheme.secondary,
+                  ),
                 ),
-              ),
-              const SizedBox(
-                width: 10,
-              ),
-              Text(
-                '15:30',
-                style: Get.theme.textTheme.headline5?.copyWith(
-                  color: Get.theme.colorScheme.tertiary,
+                const SizedBox(
+                  width: 10,
                 ),
-              ),
-              const Spacer(),
+                Text(
+                  DateFormat.Hm().format(data.completionDate!),
+                  style: Get.theme.textTheme.headline5?.copyWith(
+                    color: Get.theme.colorScheme.tertiary,
+                  ),
+                ),
+                const Spacer(),
+              ],
               DecoratedBox(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(5),
@@ -107,13 +114,13 @@ class TaskCard extends StatelessWidget {
                 ),
                 child: Padding(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                      const EdgeInsets.symmetric(horizontal: 5.5, vertical: 3),
                   child: Row(
                     children: [
-                      Icon(
-                        Icons.archive_outlined,
-                        color: Get.theme.scaffoldBackgroundColor,
-                        size: 14,
+                      SvgPicture.asset(
+                        'assets/icons/ic_fluent_archive_24_filled.svg',
+                        height: 13,
+                        color: Colors.white,
                       ),
                       const SizedBox(
                         width: 5,
@@ -132,5 +139,31 @@ class TaskCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String get _getPriorityString {
+    switch (data.priority) {
+      case TaskPriorities.low:
+        return 'Low task';
+      case TaskPriorities.medium:
+        return 'Medium task';
+      case TaskPriorities.high:
+        return 'High task';
+      default:
+        return 'Normal task';
+    }
+  }
+
+  Color get _getPriorityColor {
+    switch (data.priority) {
+      case TaskPriorities.low:
+        return CstColors.e;
+      case TaskPriorities.medium:
+        return CstColors.d;
+      case TaskPriorities.high:
+        return CstColors.c;
+      default:
+        return CstColors.d;
+    }
   }
 }
