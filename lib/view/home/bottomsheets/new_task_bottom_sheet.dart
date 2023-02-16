@@ -688,7 +688,10 @@ class _NewTaskBottomSheetState extends State<NewTaskBottomSheet> {
                         height: Get.size.height / 2.5,
                         width: constraints.maxWidth,
                         child: CupertinoDatePicker(
-                          maximumYear: DateTime.now().year + 40,
+                          minimumYear: initialDate != null
+                              ? initialDate.year
+                              : DateTime.now().year,
+                          maximumYear: DateTime.now().year + 20,
                           minimumDate: minimumDate,
                           maximumDate: maximumDate,
                           initialDateTime: initialDate,

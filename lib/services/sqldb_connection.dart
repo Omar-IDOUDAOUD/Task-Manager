@@ -7,7 +7,7 @@ const String TASKS_TABLE_CREATE_SQLQUERY = """
       CREATE TABLE Tasks(
         id  INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
         title  INTEGER NOT NULL,
-        description  TEXT ,
+        description TEXT ,
         category_id  INTEGER NOT NULL DEFAULT 1,
         creation_date DATETIME,
         priority INTEGER NULL DEFAULT 1,
@@ -73,7 +73,7 @@ class SQLiteConnectionService {
   Future<Database> _initialMobileDataBase() async {
     print("LOG: start initialization of mobile database");
     final String path = join(await getDatabasesPath(), DATABASE_NAME);
-    _db = await openDatabase(path, onCreate: _onCreate);
+    _db = await openDatabase(path, onCreate: _onCreate, version: DATABASE_VERSION);
 
     print("LOG: finish initialization of mobile database");
     return _db!;

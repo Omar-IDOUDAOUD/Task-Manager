@@ -56,16 +56,15 @@ class TaskCard extends StatelessWidget {
               )
             ],
           ),
-          data.description != null
-              ? Text(
-                  data.description!,
-                  style: Get.theme.textTheme.headline2?.copyWith(
-                    color: Get.theme.colorScheme.secondary,
-                    decoration:
-                        data.completed! ? TextDecoration.lineThrough : null,
-                  ),
-                )
-              : const SizedBox.shrink(),
+          Text(
+            data.description!.isNotEmpty ? data.description! : "No Description",
+            style: Get.theme.textTheme.headline2?.copyWith(
+              color: data.description!.isNotEmpty
+                  ? Get.theme.colorScheme.secondary
+                  : Get.theme.colorScheme.secondary.withOpacity(.5),
+              decoration: data.completed! ? TextDecoration.lineThrough : null,
+            ),
+          ),
           const SizedBox(
             height: 10,
           ),
@@ -78,35 +77,44 @@ class TaskCard extends StatelessWidget {
           const SizedBox(
             height: 10,
           ),
-          Text(
-            _getPriorityString,
-            style: Get.theme.textTheme.headline2?.copyWith(
-              color: _getPriorityColor,
-            ),
-          ),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              // completetion date
-              if (data.completionDate != null) ...[
-                Text(
-                  data.completionDate!.day == DateTime.now().day
-                      ? 'Today'
-                      : DateFormat.EEEE().format(data.completionDate!),
-                  style: Get.theme.textTheme.headline5?.copyWith(
-                    color: Get.theme.colorScheme.secondary,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _getPriorityString,
+                    style: Get.theme.textTheme.headline2?.copyWith(
+                      color: _getPriorityColor,
+                    ),
                   ),
-                ),
-                const SizedBox(
-                  width: 10,
-                ),
-                Text(
-                  DateFormat.Hm().format(data.completionDate!),
-                  style: Get.theme.textTheme.headline5?.copyWith(
-                    color: Get.theme.colorScheme.tertiary,
-                  ),
-                ),
-                const Spacer(),
-              ],
+                  if (data.completionDate != null) ...[
+                    Row(
+                      children: [
+                        Text(
+                          data.completionDate!.day == DateTime.now().day
+                              ? 'Today'
+                              : DateFormat.EEEE().format(data.completionDate!),
+                          style: Get.theme.textTheme.headline5?.copyWith(
+                            color: Get.theme.colorScheme.secondary,
+                          ),
+                        ),
+                        const SizedBox(
+                          width: 10,
+                        ),
+                        Text(
+                          DateFormat.Hm().format(data.completionDate!),
+                          style: Get.theme.textTheme.headline5?.copyWith(
+                            color: Get.theme.colorScheme.tertiary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+              const Spacer(),
               DecoratedBox(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(5),
@@ -114,22 +122,24 @@ class TaskCard extends StatelessWidget {
                 ),
                 child: Padding(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 5.5, vertical: 3),
+                      const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
                   child: Row(
                     children: [
                       SvgPicture.asset(
-                        'assets/icons/ic_fluent_archive_24_filled.svg',
+                        'assets/icons/ic_fluent_archive_24_regular.svg',
                         height: 13,
                         color: Colors.white,
                       ),
                       const SizedBox(
-                        width: 5,
+                        width: 4,
                       ),
-                      Text(
-                        data.categoryTitle!,
-                        style: Get.theme.textTheme.headline2?.copyWith(
-                            color: Get.theme.scaffoldBackgroundColor),
-                      )
+                      Text(data.categoryTitle!,
+                          style: TextStyle(
+                            fontSize: 10,
+                            height: 1,
+                            color: Get.theme.scaffoldBackgroundColor,
+                            // fontWeight: FontWeight.normal
+                          ))
                     ],
                   ),
                 ),

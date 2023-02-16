@@ -16,9 +16,9 @@ class BottomSheet {
     Function()? onCancelClick,
     String? okLabel,
     String? cancelLabel,
-    Function()? onDismiss, 
+    Function()? onDismiss,
   }) {
-    onDismiss ??= (){}; 
+    onDismiss ??= () {};
     Get.bottomSheet(
       DecoratedBox(
         decoration: BoxDecoration(
@@ -31,14 +31,14 @@ class BottomSheet {
           borderRadius: const BorderRadius.vertical(top: Radius.circular(60)),
         ),
         child: Padding(
-          padding: const EdgeInsets.only(top: 7, right: 25, left: 30),
+          padding: const EdgeInsets.only(top: 4, right: 25, left: 30),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Center(
                 child: SizedBox(
-                  height: 4.5,
+                  height: 3.5,
                   width: Get.size.width / 3,
                   child: DecoratedBox(
                     decoration: BoxDecoration(
@@ -114,7 +114,8 @@ class BottomSheet {
                   maxHeight: Get.size.height - 150,
                 ),
                 child: ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(15)),
                   child: SingleChildScrollView(
                     child: child,
                   ),
@@ -127,7 +128,7 @@ class BottomSheet {
       isScrollControlled: true,
       ignoreSafeArea: ignoreSafeArea ?? false,
       isDismissible: isDismissible ?? true,
-      barrierColor: Colors.transparent, 
+      barrierColor: Colors.transparent,
     ).whenComplete(onDismiss);
   }
 }

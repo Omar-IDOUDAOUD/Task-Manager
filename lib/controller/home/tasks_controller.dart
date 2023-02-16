@@ -93,10 +93,13 @@ class TasksController extends GetxController {
     await _categoriesProvider.init();
 
     if (!loadMoreData) return _todayTasks;
+    final now = DateTime.now(); 
     final paginated_data = await _tasksProvider.readTasks(
       limit: 10,
       offset: _tasksTabTodayTasksPaginationOffset,
       orderBy: 'id DESC',
+      where: 'DATE(completion_date) == DATE(?)', 
+      whereArgs: [now.toIso8601String(),], 
     );
     _tasksTabTodayTasksPaginationOffset += 10;
     _todayTasks.addAll(paginated_data);
@@ -104,8 +107,9 @@ class TasksController extends GetxController {
   }
 
   Future _updateTodaysTasksLength() async {
+    final now = DateTime.now(); 
     final l = await _tasksProvider.db!
-        .rawQuery('SELECT count(`id`) as c from `${_tasksProvider.tableName}`');
+        .rawQuery('SELECT count(`id`) as c from ${_tasksProvider.tableName} WHERE DATE(completion_date) == DATE(?)', [ now.toIso8601String()]);
     todayTasksNumber.value = int.parse(l.first['c'].toString());
   }
 

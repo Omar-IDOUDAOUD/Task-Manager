@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import 'package:task_manager/controller/home/tasks_controller.dart';
 import 'package:task_manager/core/constants/colors.dart';
 import 'package:task_manager/core/utils/bottom_sheet.dart' as CoreUtils;
@@ -224,7 +225,7 @@ class _TodayTasks extends StatelessWidget {
           children: [
             _Title(
               title: 'Today\'s Task',
-              subTitle: 'Wednesday, May 20',
+              subTitle: DateFormat.MMMMEEEEd().format(DateTime.now()),
             ),
             SizedBox(
               height: 20,
@@ -292,7 +293,7 @@ class _AllTasks extends StatelessWidget {
           children: [
             _Title(
               title: "All Tasks",
-              subTitle: "20% of tasks completed",
+              subTitle: DateFormat.MMMMEEEEd().format(DateTime.now()),
             ),
             SizedBox(
               height: 20,
@@ -498,9 +499,8 @@ class __AddTaskButtonState extends State<_AddTaskButton> {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-      
-          NewTaskBottomSheet.open(); 
-       
+        NewTaskBottomSheet.open();
+
         // CoreUtils.BottomSheet.open(
         //   Column(
         //     children: [
