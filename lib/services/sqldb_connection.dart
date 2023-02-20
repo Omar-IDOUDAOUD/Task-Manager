@@ -6,7 +6,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 const String TASKS_TABLE_CREATE_SQLQUERY = """
       CREATE TABLE Tasks(
         id  INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-        title  INTEGER NOT NULL,
+        title TEXT NOT NULL,
         description TEXT ,
         category_id  INTEGER NOT NULL DEFAULT 1,
         creation_date DATETIME,
@@ -47,7 +47,7 @@ class SQLiteConnectionService {
     return _instance!;
   }
 
-  static const DATABASE_NAME = "TaskManagerSqlDbTestingv39.db";
+  static const DATABASE_NAME = "TaskManagerSqlDbTestingv40.db";
   static const DATABASE_VERSION = 1;
   Database? _db;
 

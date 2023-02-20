@@ -20,14 +20,14 @@ class CategoryModel {
   factory CategoryModel.fromMap(Map<String, dynamic> map) {
     return CategoryModel(
       id: map['id'],
-      title: map['title'],
+      title: map['title'].toString(),
       color: Color(int.parse(map['color_code'])),
       productivityPerCentage: map['productivity_percentage'],
       tasksNumber: map['tasks_number'],
       threeLastTasksTitles: [
-        map['last_first_task_title'],
-        map['last_second_task_title'],
-        map['last_third_task_title']
+        map['last_first_task_title'].toString(),
+        map['last_second_task_title'].toString(),
+        map['last_third_task_title'].toString(), 
       ],
     );
   }

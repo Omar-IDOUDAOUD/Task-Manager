@@ -32,13 +32,14 @@ class TaskModel {
     final now = DateTime.now();
     creationDate ??= now;
   }
+  
 
   factory TaskModel.fromMap(Map<String, dynamic> map) {
     return TaskModel(
       id: map['id'],
       creationDate: DateTime.parse(map['creation_date']),
-      title: map['title'],
-      description: map['description'],
+      title: map['title'].toString(),
+      description: map['description'].toString(),
       priority: map['priority'] != null
           ? TaskPriorities.values.elementAt(map['priority'])
           : null,
@@ -50,7 +51,7 @@ class TaskModel {
           : null,
       completed: map['completed'] == 1,
       categoryId: map['category_id'],
-      categoryTitle: map['category_title'],
+      categoryTitle: map['category_title'].toString(),
       categoryColor: map['category_color_code'] != null
           ? Color(int.parse(map['category_color_code']))
           : null,
