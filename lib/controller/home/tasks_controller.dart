@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:task_manager/data/model/cotegoriy.dart';
@@ -12,6 +11,7 @@ const ALL_TASKS_WID_ID = "ALL_TASKS_WID_ID";
 const CATEGORIES_WID_ID = "CATEGORIES_WID_ID";
 const CATEGORYTASKS_WID_ID = "CATEGORYTASKS_WID_ID";
 const COMPLETED_TASKS_WID_ID = "COMPLETED_TASKS_WID_ID";
+const TASKS_TAB_PARTS_WID_ID = "TASKS_TAB_PARTS_WID_ID";
 
 class TasksController extends GetxController {
   final TasksProvider _tasksProvider = TasksProvider();
@@ -88,41 +88,40 @@ class TasksController extends GetxController {
     _updateAllTasksLength();
   }
 
-  Future<List<TaskModel>> getTodaysTasks(bool loadMoreData) async {
+  Future<List<TaskModel>> getTodaysTasks(int paginationOffset,
+      {int paginationLimit = 10}) async {
     await _tasksProvider.init();
     await _categoriesProvider.init();
 
-    if (!loadMoreData) return _todayTasks;
-    final now = DateTime.now(); 
+    final now = DateTime.now();
     final paginated_data = await _tasksProvider.readTasks(
-      limit: 10,
-      offset: _tasksTabTodayTasksPaginationOffset,
+      limit: paginationLimit,
+      offset: paginationOffset,
       orderBy: 'id DESC',
-      where: 'DATE(completion_date) == DATE(?)', 
-      whereArgs: [now.toIso8601String(),], 
+      where: 'DATE(completion_date) == DATE(?)',
+      whereArgs: [
+        now.toIso8601String(),
+      ],
     );
-    _tasksTabTodayTasksPaginationOffset += 10;
-    _todayTasks.addAll(paginated_data);
-    return _todayTasks;
+    return paginated_data;
   }
 
   Future _updateTodaysTasksLength() async {
-    final now = DateTime.now(); 
-    final l = await _tasksProvider.db!
-        .rawQuery('SELECT count(`id`) as c from ${_tasksProvider.tableName} WHERE DATE(completion_date) == DATE(?)', [ now.toIso8601String()]);
+    final now = DateTime.now();
+    final l = await _tasksProvider.db!.rawQuery(
+        'SELECT count(`id`) as c from ${_tasksProvider.tableName} WHERE DATE(completion_date) == DATE(?)',
+        [now.toIso8601String()]);
     todayTasksNumber.value = int.parse(l.first['c'].toString());
   }
 
-  Future<List<TaskModel>> getAllTasks(bool loadMoreData) async {
-    if (!loadMoreData) return _allTasks;
+  Future<List<TaskModel>> getAllTasks(int paginationOffset,
+      {int paginationLimit = 10}) async {
     final paginated_data = await _tasksProvider.readTasks(
-      limit: 10,
-      offset: _tasksTabAllTasksPaginationOffset,
+      limit: paginationLimit,
+      offset: paginationOffset,
       orderBy: 'id DESC',
     );
-    _tasksTabAllTasksPaginationOffset += 10;
-    _allTasks.addAll(paginated_data);
-    return _allTasks;
+    return paginated_data;
   }
 
   Future _updateAllTasksLength() async {
@@ -131,17 +130,17 @@ class TasksController extends GetxController {
     allTasksNumber.value = int.parse(l.first['c'].toString());
   }
 
-  Future<List<CategoryModel>> getCategories(bool loadMoreData) async {
-    if (!loadMoreData) return _categories;
+  Future<List<CategoryModel>> getCategories(int paginationOffset,
+      {int paginationLimit = 5}) async {
     final paginated_data = await _categoriesProvider.readCategories(
-        limit: 10, offset: _tasksTabCategoriesPaginationOffset);
+        limit: paginationLimit, offset: paginationOffset);
     for (var i = 0; i < paginated_data.length; i++) {
       final titles = (await _tasksProvider.readTasks(
         where: 'category_id = ?',
         whereArgs: [paginated_data.elementAt(i).id],
         groupBy: 'id',
         orderBy: 'id DESC',
-        limit: 3,
+        limit: paginationLimit,
       ))
           .map((e) => e.title)
           .toList();
@@ -161,26 +160,21 @@ class TasksController extends GetxController {
       paginated_data[i].productivityPerCentage =
           allTasksNumber != 0 ? completedTasksNumber * 100 / allTasksNumber : 0;
     }
-    _tasksTabCategoriesPaginationOffset += 10;
-    _categories.addAll(paginated_data);
-    return _categories;
+    return paginated_data;
   }
 
   Future<List<TaskModel>> getCategoryTasks(
-      int categoryId, bool loadMoreData) async {
-    print('controller called');
-    if (!loadMoreData) return _categoryTasks;
+      int categoryId,{ required int paginationOffset,
+      int paginationLimit = 10}) async {
     final List<TaskModel> paginated_data = await _tasksProvider.readTasks(
       where: 'category_id = ?',
       whereArgs: [categoryId],
-      limit: 10,
-      offset: _categoryTasksPagintionOffset,
+      limit: paginationLimit,
+      offset: paginationOffset,
       orderBy: 'id DESC',
-    );
-    _categoryTasksPagintionOffset += 10;
-    _categoryTasks.addAll(paginated_data);
+    ); 
 
-    return _categoryTasks;
+    return paginated_data;
   }
 
   void deleteLastSavedCategoryTasks() {
@@ -201,23 +195,26 @@ class TasksController extends GetxController {
     _allTasks.clear();
   }
 
-  Future<List<TaskModel>> getCompletedTasks(bool loadMoreData) async {
+  Future<List<TaskModel>> getCompletedTasks(int paginationOffset,
+      {int paginationLimit = 10}) async {
     await _tasksProvider.init();
 
-    if (!loadMoreData) return _completedTasks;
     final paginated_data = await _tasksProvider.readTasks(
       where: 'completed = ?',
       whereArgs: ['1'],
-      limit: 10,
-      offset: _completedTabPaginationOffset,
+      offset: paginationOffset,
+      limit: paginationLimit,
       orderBy: 'id DESC',
     );
-    _completedTabPaginationOffset += 10;
-    _completedTasks.addAll(paginated_data);
-    return _completedTasks;
+    return paginated_data;
   }
 
   Future<void> createTask(TaskModel data) async {
+    //  await this.createCategory(CategoryModel(color: Colors.blue, title: "test cat", tasksNumber: 0, productivityPerCentage: 0.0, ));
+    //  await this.createCategory(CategoryModel(color: Colors.green, title: "test cat", tasksNumber: 0, productivityPerCentage: 0.0, ));
+    //  await this.createCategory(CategoryModel(color: Colors.orange, title: "test cat", tasksNumber: 0, productivityPerCentage: 0.0, ));
+    //  await this.createCategory(CategoryModel(color: Colors.purple, title: "test cat", tasksNumber: 0, productivityPerCentage: 0.0, ));
+    //  await this.createCategory(CategoryModel(color: Colors.brown, title: "test cat", tasksNumber: 0, productivityPerCentage: 0.0, ));
     final category = (await _categoriesProvider.readCategories(
       where: 'id = ?',
       whereArgs: [data.categoryId],
@@ -226,7 +223,8 @@ class TasksController extends GetxController {
         .first;
     data
       ..categoryTitle = category.title
-      ..categoryColor = category.color;
+      ..categoryColor = category.color
+      ..completed = true; 
     await _tasksProvider.createTask(data);
     _updateAllTasksLength();
     _updateTodaysTasksLength();
