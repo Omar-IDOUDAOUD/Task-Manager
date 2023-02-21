@@ -47,7 +47,7 @@ class SQLiteConnectionService {
     return _instance!;
   }
 
-  static const DATABASE_NAME = "TaskManagerSqlDbTestingv40.db";
+  static const DATABASE_NAME = "TaskManagerSqlDbTestingv48.db";
   static const DATABASE_VERSION = 1;
   Database? _db;
 
@@ -73,7 +73,8 @@ class SQLiteConnectionService {
   Future<Database> _initialMobileDataBase() async {
     print("LOG: start initialization of mobile database");
     final String path = join(await getDatabasesPath(), DATABASE_NAME);
-    _db = await openDatabase(path, onCreate: _onCreate, version: DATABASE_VERSION);
+    _db = await openDatabase(path,
+        onCreate: _onCreate, version: DATABASE_VERSION);
 
     print("LOG: finish initialization of mobile database");
     return _db!;

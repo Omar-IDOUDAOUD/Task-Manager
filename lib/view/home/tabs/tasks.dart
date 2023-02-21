@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
@@ -6,7 +8,6 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:task_manager/controller/home/tasks_controller.dart';
 import 'package:task_manager/core/constants/colors.dart';
-import 'package:task_manager/core/utils/bottom_sheet.dart' as CoreUtils;
 import 'package:task_manager/data/model/cotegoriy.dart';
 import 'package:task_manager/data/model/task.dart';
 import 'package:task_manager/view/home/bottomsheets/new_task_bottom_sheet.dart';
@@ -26,7 +27,7 @@ class _TasksTabState extends State<TasksTab>
   int? _categorySelectedId;
   String? _categorySelectedTitle;
 
-  late AnimationController _partsNavigationTopBarAnCtrl;
+  late final AnimationController _partsNavigationTopBarAnCtrl;
 
   final _partsFadeTransitionDuration = 500.milliseconds;
 
@@ -43,22 +44,27 @@ class _TasksTabState extends State<TasksTab>
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        AnimatedSwitcher(
-          layoutBuilder: (currentChild, previousChild) {
-            return Align(
-              alignment: Alignment.topCenter,
-              child: currentChild,
-            );
-          },
-          duration: _partsFadeTransitionDuration,
-          transitionBuilder: (child, animation) {
-            return FadeTransition(
-              opacity: animation,
-              child: child,
-            );
-          },
-          child: _getCurrentTabPart(),
-        ),
+        GetBuilder(
+            id: TASKS_TAB_PARTS_WID_ID,
+            init: _controller,
+            builder: (context) {
+              return AnimatedSwitcher(
+                layoutBuilder: (currentChild, previousChild) {
+                  return Align(
+                    alignment: Alignment.topCenter,
+                    child: currentChild,
+                  );
+                },
+                duration: _partsFadeTransitionDuration,
+                transitionBuilder: (child, animation) {
+                  return FadeTransition(
+                    opacity: animation,
+                    child: child,
+                  );
+                },
+                child: _getCurrentTabPart(),
+              );
+            }),
         // ),
         AnimatedBuilder(
           animation: CurvedAnimation(
@@ -92,8 +98,6 @@ class _TasksTabState extends State<TasksTab>
             specificCategoryName:
                 _categorySelectedId != null ? _categorySelectedTitle : null,
             onChangedPart: (newPart) {
-              if (_categorySelectedId != null)
-                _controller.deleteLastSavedCategoryTasks();
               if (_currentPart != newPart)
                 setState(
                   () {
@@ -113,7 +117,6 @@ class _TasksTabState extends State<TasksTab>
             scale: _categorySelectedId != null ? 1 : 0,
             child: GestureDetector(
               onTap: () {
-                _controller.deleteLastSavedCategoryTasks();
                 setState(() {
                   _categorySelectedId = null;
                 });
@@ -152,32 +155,29 @@ class _TasksTabState extends State<TasksTab>
       _partsNavigationTopBarAnCtrl.reverse();
   }
 
-  _TodayTasks? _todayTasksWidget;
-  _AllTasks? _allTasksWidget;
-  _Categories? _categoriesWidget;
-
   _getCurrentTabPart() {
     _partsNavigationTopBarAnCtrl.reverse();
     if (_categorySelectedId != null)
       return _SpecificCategoryTasks(
+        key: ValueKey(_categorySelectedId),
         categoryId: _categorySelectedId!,
         controller: _controller,
         scrollListener: _tabScrollListener,
       );
     if (_currentPart == 0) {
-      _todayTasksWidget ??= _TodayTasks(
+      return _TodayTasks(
         controller: _controller,
         scrollListener: _tabScrollListener,
       );
-      return _todayTasksWidget;
     } else if (_currentPart == 1) {
-      _allTasksWidget ??= _AllTasks(
+      return _AllTasks(
+        key: ValueKey(_currentPart),
         controller: _controller,
         scrollListener: _tabScrollListener,
       );
-      return _allTasksWidget;
     } else if (_currentPart == 2) {
-      _categoriesWidget ??= _Categories(
+      return _Categories(
+        key: ValueKey(_currentPart),
         controller: _controller,
         scrollListener: _tabScrollListener,
         onSelectedCatecory: (id, categoryTitle) {
@@ -187,265 +187,659 @@ class _TasksTabState extends State<TasksTab>
           });
         },
       );
-      return _categoriesWidget;
     }
   }
 }
 
 /// PARTS
-class _TodayTasks extends StatelessWidget {
-  _TodayTasks({Key? key, this.scrollListener, required this.controller})
+class _TodayTasks extends StatefulWidget {
+  const _TodayTasks(
+      {Key? key, required this.scrollListener, required this.controller})
       : super(key: key);
   final TasksController controller;
-  final Function(double scrollOffset)? scrollListener;
+  final Function(double scrollOffset) scrollListener;
 
-  bool get _getCanLoadMoreData {
-    final copy = controller.canLoadMoreDataInTodaysTasksPart;
-    controller.canLoadMoreDataInTodaysTasksPart = true;
-    return copy ?? true;
+  @override
+  State<_TodayTasks> createState() => _TodayTasksState();
+}
+
+class _TodayTasksState extends State<_TodayTasks> {
+  final List<TaskModel> _data = [];
+  final ScrollController _scrollController = ScrollController();
+  bool _canLoadMoreData = true;
+  int _paginationOffset = 0;
+  late final int _paginationLimit;
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    super.dispose();
+    widget.controller.onUpdateTodayTasksNotifier
+        .removeListener(onUpdateListiner);
+  }
+
+  @override
+  void initState() {
+    widget.controller.onUpdateTodayTasksNotifier.addListener(onUpdateListiner);
+    _paginationLimit = (Get.size.height ~/ 150) * 2;
+    _scrollController.addListener(() {
+      widget.scrollListener(_scrollController.offset);
+      if (_canLoadMoreData &&
+          _scrollController.offset ==
+              _scrollController.position.maxScrollExtent) {
+        _loadMoreData();
+      }
+    });
+    _loadMoreData();
+  }
+
+  void onUpdateListiner() {
+    final v = widget.controller.onUpdateTodayTasksNotifier.value;
+    if (v!.isAddNewTask) {
+      _data.insert(0, v.task!);
+      widget.controller.todayTasksListKey.currentState!
+          .insertItem(1, duration: 900.milliseconds);
+      _paginationOffset++;
+    } else {
+      if (v.index! < _data.length) _data.removeAt(v.index!);
+      widget.controller.todayTasksListKey.currentState!.removeItem(v.index!,
+          (_, a) {
+        return SizedBox.shrink();
+      }, duration: 900.milliseconds);
+    }
+  }
+
+  void _loadMoreData() async {
+    final newData = await widget.controller
+        .getTodaysTasks(_paginationOffset, paginationLimit: _paginationLimit);
+    _paginationOffset += _paginationLimit;
+
+    newData.forEach((element) {
+      _data.add(element);
+      widget.controller.todayTasksListKey.currentState!
+          .insertItem(_data.length, duration: 500.milliseconds);
+    });
+
+    if (newData.length < _paginationLimit) {
+      setState(() {
+        _canLoadMoreData = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (controller.canLoadMoreDataInTodaysTasksPart != null)
-      controller.canLoadMoreDataInTodaysTasksPart = false;
-    return GetBuilder<TasksController>(
-      init: controller,
-      builder: (controller) {
-        print('rebuild todaystasks widget');
-        return ListView(
-          controller: controller.tasksTabToaysTasksScrollController
-            ..addListener(() {
-              if (scrollListener != null)
-                scrollListener!(
-                    controller.tasksTabToaysTasksScrollController.offset);
-            }),
-          padding:
-              const EdgeInsets.only(top: 70, bottom: 25, left: 25, right: 25),
-          children: [
-            _Title(
-              title: 'Today\'s Task',
-              subTitle: DateFormat.MMMMEEEEd().format(DateTime.now()),
-            ),
-            SizedBox(
-              height: 20,
-            ),
-            FutureBuilder<List<TaskModel>>(
-              future: controller.getTodaysTasks(_getCanLoadMoreData),
-              builder: (ctx, screenShot) {
-                return Column(
-                  children: [
-                    if (screenShot.hasData)
-                      ...List.generate(
-                        screenShot.data!.length,
-                        (index) => Padding(
-                          padding: EdgeInsets.only(bottom: 20),
-                          child: TaskCard(
-                            data: screenShot.data!.elementAt(index),
-                          ),
-                        ),
-                      ),
-                    if (screenShot.connectionState == ConnectionState.waiting)
-                      const Padding(
-                        padding: EdgeInsets.all(10),
-                        child: CupertinoActivityIndicator(),
-                      ),
-                  ],
-                );
-              },
-            ),
-          ],
-        );
+    return AnimatedList(
+      key: widget.controller.todayTasksListKey,
+      padding: const EdgeInsets.only(top: 70, bottom: 25, left: 25, right: 25),
+      controller: _scrollController,
+      initialItemCount: _data.length + 2,
+      itemBuilder: (ctx, index, animation) {
+        if (index == 0)
+          return _Title(
+            title: 'Today\'s Task',
+            subTitle: DateFormat.MMMMEEEEd().format(DateTime.now()),
+          ).marginOnly(bottom: 20);
+        index--;
+        return index < _data.length
+            ? SizeTransition(
+                sizeFactor: CurvedAnimation(
+                    parent: animation, curve: Curves.linearToEaseOut),
+                child: SingleChildScrollView(
+                  child: TaskCard(
+                    data: _data.elementAt(index),
+                  ).marginOnly(bottom: 15),
+                ),
+              )
+            : _canLoadMoreData
+                ? const CupertinoActivityIndicator()
+                : _data.isEmpty
+                    ? const Text('no data')
+                    : const SizedBox.shrink();
       },
-      id: TODAYS_TASKS_WID_ID,
     );
   }
 }
 
-class _AllTasks extends StatelessWidget {
-  const _AllTasks({Key? key, required this.controller, this.scrollListener})
+class _AllTasks extends StatefulWidget {
+  const _AllTasks(
+      {Key? key, required this.controller, required this.scrollListener})
       : super(key: key);
-  final Function(double scrollOffset)? scrollListener;
-
   final TasksController controller;
-  bool get _getCanLoadMoreData {
-    var copy = controller.canLoadMoreDataInAllTasksPart;
-    controller.canLoadMoreDataInAllTasksPart = true;
-    return copy ?? true;
+  final Function(double scrollOffset) scrollListener;
+
+  @override
+  State<_AllTasks> createState() => _AllTasksState();
+}
+
+class _AllTasksState extends State<_AllTasks> {
+  final List<TaskModel> _data = [];
+  final ScrollController _scrollController = ScrollController();
+  bool _canLoadMoreData = true;
+  int _paginationOffset = 0;
+  late final int _paginationLimit;
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    super.dispose();
+    widget.controller.onUpdateAllTasksNotifier.removeListener(onUpdateListiner);
+  }
+
+  @override
+  void initState() {
+    widget.controller.onUpdateAllTasksNotifier.addListener(onUpdateListiner);
+    _paginationLimit = (Get.size.height ~/ 150) * 2;
+    _scrollController.addListener(() {
+      widget.scrollListener(_scrollController.offset);
+      if (_canLoadMoreData &&
+          _scrollController.offset ==
+              _scrollController.position.maxScrollExtent) {
+        _loadMoreData();
+      }
+    });
+    _loadMoreData();
+  }
+
+  void onUpdateListiner() {
+    final v = widget.controller.onUpdateAllTasksNotifier.value;
+    if (v!.isAddNewTask) {
+      _data.insert(0, v.task!);
+      widget.controller.allTasksListKey.currentState!
+          .insertItem(1, duration: 900.milliseconds);
+      _paginationOffset++;
+    } else {
+      if (v.index! < _data.length) _data.removeAt(v.index!);
+      widget.controller.allTasksListKey.currentState!.removeItem(v.index!,
+          (_, a) {
+        return SizedBox.shrink();
+      }, duration: 900.milliseconds);
+    }
+  }
+
+  void _loadMoreData() async {
+    final newData = await widget.controller
+        .getAllTasks(_paginationOffset, paginationLimit: _paginationLimit);
+    _paginationOffset += _paginationLimit;
+
+    newData.forEach((element) {
+      _data.add(element);
+      widget.controller.allTasksListKey.currentState!
+          .insertItem(_data.length, duration: 500.milliseconds);
+    });
+
+    if (newData.length < _paginationLimit) {
+      setState(() {
+        _canLoadMoreData = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (controller.canLoadMoreDataInAllTasksPart != null)
-      controller.canLoadMoreDataInAllTasksPart = false;
-    return GetBuilder<TasksController>(
-      init: controller,
-      builder: (controller) {
-        return ListView(
-          controller: controller.tasksTabAllTasksScrollController
-            ..addListener(() {
-              if (scrollListener != null)
-                scrollListener!(
-                    controller.tasksTabAllTasksScrollController.offset);
-            }),
-          padding:
-              const EdgeInsets.only(top: 70, bottom: 25, left: 25, right: 25),
-          children: [
-            _Title(
-              title: "All Tasks",
-              subTitle: DateFormat.MMMMEEEEd().format(DateTime.now()),
-            ),
-            SizedBox(
-              height: 20,
-            ),
-            FutureBuilder<List<TaskModel>>(
-              future: controller.getAllTasks(_getCanLoadMoreData),
-              builder: (ctx, screenShot) {
-                return Column(
-                  children: [
-                    if (screenShot.hasData)
-                      ...List.generate(
-                        screenShot.data!.length,
-                        (index) => TaskCard(
-                          data: screenShot.data!.elementAt(index),
-                        ),
-                      ),
-                    if (screenShot.connectionState == ConnectionState.waiting)
-                      const Padding(
-                        padding: EdgeInsets.all(10),
-                        child: CupertinoActivityIndicator(),
-                      ),
-                  ],
-                );
-              },
-            ),
-          ],
-        );
+    return AnimatedList(
+      key: widget.controller.allTasksListKey,
+      padding: const EdgeInsets.only(top: 70, bottom: 25, left: 25, right: 25),
+      controller: _scrollController,
+      initialItemCount: _data.length + 2,
+      itemBuilder: (ctx, index, animation) {
+        if (index == 0)
+          return _Title(
+                  title: 'All Tasks',
+                  subTitle: DateFormat.MMMMEEEEd().format(DateTime.now()))
+              .marginOnly(bottom: 20);
+        index--;
+        return index < _data.length
+            ? SizeTransition(
+                sizeFactor: CurvedAnimation(
+                    parent: animation, curve: Curves.linearToEaseOut),
+                child: SingleChildScrollView(
+                  child: TaskCard(
+                    data: _data.elementAt(index),
+                  ).marginOnly(bottom: 15),
+                ),
+              )
+            : _canLoadMoreData
+                ? const CupertinoActivityIndicator()
+                : _data.isEmpty
+                    ? const Text('no data')
+                    : const SizedBox.shrink();
       },
-      id: ALL_TASKS_WID_ID,
     );
   }
 }
 
-class _Categories extends StatelessWidget {
+class _Categories extends StatefulWidget {
   const _Categories({
     Key? key,
     required this.onSelectedCatecory,
     required this.controller,
-    this.scrollListener,
+    required this.scrollListener,
   }) : super(key: key);
   final TasksController controller;
-  final Function(double scrollOffset)? scrollListener;
+  final Function(double scrollOffset) scrollListener;
   final Function(int id, String categoryTitle) onSelectedCatecory;
-  bool get _getCanLoadMoreData {
-    var copy = controller.canLoadMoreDataInCategoriesPart;
-    controller.canLoadMoreDataInCategoriesPart = true;
-    return copy ?? true;
+
+  @override
+  State<_Categories> createState() => _CategoriesState();
+}
+
+class _CategoriesState extends State<_Categories> {
+  final List<CategoryModel> _data = [];
+  final ScrollController _scrollController = ScrollController();
+  bool _canLoadMoreData = true;
+  int _paginationOffset = 0;
+  late final int _paginationLimit;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    _paginationLimit = (Get.size.height ~/ 120) * 2;
+    _scrollController.addListener(() {
+      widget.scrollListener(_scrollController.offset);
+      if (_canLoadMoreData &&
+          _scrollController.offset ==
+              _scrollController.position.maxScrollExtent) {
+        _loadMoreData();
+      }
+    });
+    _loadMoreData();
+  }
+
+  void _loadMoreData() async {
+    final newData = await widget.controller
+        .getCategories(_paginationOffset, paginationLimit: _paginationLimit);
+    // await 2.seconds.delay();
+    _paginationOffset += _paginationLimit;
+    setState(() {
+      _data.addAll(newData);
+      if (newData.length < _paginationLimit) _canLoadMoreData = false;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    if (controller.canLoadMoreDataInCategoriesPart != null)
-      controller.canLoadMoreDataInCategoriesPart = false;
-    return GetBuilder<TasksController>(
-      init: controller,
-      builder: (controller) => SingleChildScrollView(
-        controller: controller.tasksTabCategoriesScrollController
-          ..addListener(() {
-            if (scrollListener != null)
-              scrollListener!(
-                  controller.tasksTabCategoriesScrollController.offset);
-          }),
-        padding:
-            const EdgeInsets.only(top: 70, bottom: 25, left: 25, right: 25),
-        child: FutureBuilder<List<CategoryModel>>(
-          future: controller.getCategories(_getCanLoadMoreData),
-          builder: (ctx, screenShot) {
-            return Column(
-              children: [
-                if (screenShot.hasData)
-                  StaggeredGrid.count(
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 10,
-                    crossAxisSpacing: 10,
-                    children: List.generate(
-                      screenShot.data!.length,
-                      (index) => _CategoryCard(
-                        onTap: () => onSelectedCatecory(
-                            screenShot.data!.elementAt(index).id!,
-                            screenShot.data!.elementAt(index).title!),
-                        data: screenShot.data!.elementAt(index),
-                      ),
-                    ),
-                  ),
-                if (screenShot.connectionState == ConnectionState.waiting)
-                  const Padding(
-                    padding: EdgeInsets.all(10),
-                    child: CupertinoActivityIndicator(),
-                  ),
-              ],
-            );
+    return SingleChildScrollView(
+      controller: _scrollController,
+      padding: const EdgeInsets.only(top: 70, bottom: 25, left: 25, right: 25),
+      child: StaggeredGrid.count(
+        crossAxisCount: 2,
+        mainAxisSpacing: 10,
+        crossAxisSpacing: 10,
+        children: List.generate(
+          _data.length + 2,
+          (index) {
+            if (index < _data.length)
+              return _CategoryCard(
+                onTap: () => widget.onSelectedCatecory(
+                    _data.elementAt(index).id!, _data.elementAt(index).title!),
+                data: _data.elementAt(index),
+              );
+            return _canLoadMoreData
+                ? _LoadingCategoryCardWidgetIndicator()
+                : const SizedBox.shrink();
           },
         ),
       ),
-      id: CATEGORIES_WID_ID,
     );
   }
 }
 
-class _SpecificCategoryTasks extends StatelessWidget {
+class _LoadingCategoryCardWidgetIndicator extends StatefulWidget {
+  _LoadingCategoryCardWidgetIndicator({
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  State<_LoadingCategoryCardWidgetIndicator> createState() =>
+      _LoadingCategoryCardWidgetIndicatorState();
+}
+
+class _LoadingCategoryCardWidgetIndicatorState
+    extends State<_LoadingCategoryCardWidgetIndicator>
+    with TickerProviderStateMixin {
+  late final AnimationController _animationController;
+  late final Animation<Color?> _animation;
+
+  _getAWidthFcator() {
+    double widthFactor = Random.secure().nextDouble() * 1;
+    while (widthFactor < 0.5) {
+      widthFactor = _getAWidthFcator();
+    }
+    return widthFactor;
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void initState() {
+    _animationController =
+        AnimationController(vsync: this, duration: 500.milliseconds)
+          ..addListener(() {
+            setState(() {});
+          });
+    _animation = ColorTween(
+            begin: Get.theme.scaffoldBackgroundColor.withOpacity(.2),
+            end: Get.theme.scaffoldBackgroundColor)
+        .animate(_animationController);
+    _animationController.repeat(reverse: true);
+    _wf1 = _getAWidthFcator();
+    _wf2 = _getAWidthFcator();
+  }
+
+  late final double _wf1;
+  late final double _wf2;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 100,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          color: Get.theme.colorScheme.tertiary.withOpacity(.5),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                height: 15,
+                child: FractionallySizedBox(
+                  widthFactor: _wf1,
+                  heightFactor: 1,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(15),
+                      color: _animation.value,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(
+                height: 5,
+              ),
+              SizedBox(
+                height: 15,
+                child: FractionallySizedBox(
+                  widthFactor: _wf2,
+                  heightFactor: 1,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(15),
+                      color: _animation.value,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+///
+///
+class _LoadingTaskCardWidgetIndicator extends StatefulWidget {
+  _LoadingTaskCardWidgetIndicator({
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  State<_LoadingTaskCardWidgetIndicator> createState() =>
+      _LoadingTaskCardWidgetIndicatorState();
+}
+
+class _LoadingTaskCardWidgetIndicatorState
+    extends State<_LoadingTaskCardWidgetIndicator>
+    with TickerProviderStateMixin {
+  late final AnimationController _animationController;
+  late final Animation<Color?> _animation;
+
+  _getAWidthFcator() {
+    double widthFactor = Random.secure().nextDouble() * 1;
+
+    while (widthFactor < 0.2) {
+      widthFactor = _getAWidthFcator();
+    }
+    return widthFactor;
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void initState() {
+    _animationController =
+        AnimationController(vsync: this, duration: 500.milliseconds)
+          ..addListener(() {
+            setState(() {});
+          });
+    _animation = ColorTween(
+            begin: Get.theme.scaffoldBackgroundColor.withOpacity(.2),
+            end: Get.theme.scaffoldBackgroundColor)
+        .animate(_animationController);
+    _animationController.repeat(reverse: true);
+    _wf1 = _getAWidthFcator();
+    _wf2 = _getAWidthFcator();
+  }
+
+  late final double _wf1;
+  late final double _wf2;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        color: Get.theme.colorScheme.tertiary.withOpacity(.3),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              height: 15,
+              child: FractionallySizedBox(
+                widthFactor: _wf1,
+                heightFactor: 1,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(15),
+                    color: _animation.value,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(
+              height: 5,
+            ),
+            SizedBox(
+              height: 8,
+              child: FractionallySizedBox(
+                widthFactor: _wf2,
+                heightFactor: 1,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(15),
+                    color: _animation.value,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(
+              height: 5,
+            ),
+            SizedBox(
+              height: 8,
+              child: FractionallySizedBox(
+                widthFactor: _wf2 / 2,
+                heightFactor: 1,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(15),
+                    color: _animation.value,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(
+              height: 15,
+            ),
+            Row(
+              children: [
+                Expanded(
+                  flex: 1,
+                  child: SizedBox(
+                    height: 10,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(15),
+                        color: _animation.value,
+                      ),
+                    ),
+                  ),
+                ),
+                const Spacer(
+                  flex: 2,
+                ),
+                Expanded(
+                  flex: 1,
+                  child: SizedBox(
+                    height: 20,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(5),
+                        color: _animation.value,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SpecificCategoryTasks extends StatefulWidget {
   const _SpecificCategoryTasks(
       {Key? key,
       required this.categoryId,
-      this.scrollListener,
+      required this.scrollListener,
       required this.controller})
       : super(key: key);
   final int categoryId;
-  final Function(double scrollOffset)? scrollListener;
+  final Function(double scrollOffset) scrollListener;
 
   final TasksController controller;
-  bool get _getCanLoadMoreData {
-    var copy = controller.canLoadMoreDataInCategoryTasks;
-    controller.canLoadMoreDataInCategoryTasks = true;
-    return copy ?? true;
+
+  @override
+  State<_SpecificCategoryTasks> createState() => _SpecificCategoryTasksState();
+}
+
+class _SpecificCategoryTasksState extends State<_SpecificCategoryTasks> {
+  final List<TaskModel> _data = [];
+  final ScrollController _scrollController = ScrollController();
+  bool _canLoadMoreData = true;
+  int _paginationOffset = 0;
+  late final int _paginationLimit;
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    super.dispose();
+    widget.controller.onUpdateCategoryTasksTasksNotifier
+        .removeListener(onUpdateListiner);
+  }
+
+  @override
+  void initState() {
+    widget.controller.onUpdateCategoryTasksTasksNotifier
+        .addListener(onUpdateListiner);
+    _paginationLimit = (Get.size.height ~/ 150) * 2;
+    _scrollController.addListener(() {
+      widget.scrollListener(_scrollController.offset);
+      if (_canLoadMoreData &&
+          _scrollController.offset ==
+              _scrollController.position.maxScrollExtent) {
+        _loadMoreData();
+      }
+    });
+    _loadMoreData();
+  }
+
+  void onUpdateListiner() {
+    final v = widget.controller.onUpdateCategoryTasksTasksNotifier.value;
+    if (v!.isAddNewTask) {
+      _data.insert(0, v.task!);
+      widget.controller.categoryTasksListKey.currentState!
+          .insertItem(1, duration: 900.milliseconds);
+      _paginationOffset++;
+    } else {
+      if (v.index! < _data.length) _data.removeAt(v.index!);
+      widget.controller.categoryTasksListKey.currentState!.removeItem(v.index!,
+          (_, a) {
+        return const SizedBox.shrink();
+      }, duration: 900.milliseconds);
+    }
+  }
+
+  void _loadMoreData() async {
+    final newData = await widget.controller.getCategoryTasks(widget.categoryId,
+        paginationOffset: _paginationOffset, paginationLimit: _paginationLimit);
+    _paginationOffset += _paginationLimit;
+
+    newData.forEach((element) {
+      _data.add(element);
+      widget.controller.categoryTasksListKey.currentState!
+          .insertItem(_data.length - 1, duration: 500.milliseconds);
+    });
+
+    if (newData.length < _paginationLimit) {
+      setState(() {
+        _canLoadMoreData = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (controller.canLoadMoreDataInCategoryTasks != null)
-      controller.canLoadMoreDataInCategoryTasks = false;
-    return GetBuilder<TasksController>(
-      builder: (controller) => SingleChildScrollView(
-        controller: controller.categoryTasksScrollController
-          ..addListener(() {
-            if (scrollListener != null)
-              scrollListener!(controller.categoryTasksScrollController.offset);
-          }),
-        padding:
-            const EdgeInsets.only(top: 70, bottom: 25, left: 25, right: 25),
-        child: FutureBuilder<List<TaskModel>>(
-          future: controller.getCategoryTasks(categoryId, _getCanLoadMoreData),
-          builder: (ctx, screenShot) {
-            return Column(
-              children: [
-                if (screenShot.hasData)
-                  ...List.generate(
-                    screenShot.data!.length,
-                    (index) => TaskCard(
-                      data: screenShot.data!.elementAt(index),
-                    ),
-                  ),
-                if (screenShot.connectionState == ConnectionState.waiting)
-                  const Padding(
-                    padding: EdgeInsets.all(10),
-                    child: CupertinoActivityIndicator(),
-                  ),
-              ],
-            );
-          },
-        ),
-      ),
-      id: CATEGORYTASKS_WID_ID,
+    return AnimatedList(
+      key: widget.controller.categoryTasksListKey,
+      padding: const EdgeInsets.only(top: 70, bottom: 25, left: 25, right: 25),
+      controller: _scrollController,
+      initialItemCount: _data.length + 1,
+      itemBuilder: (ctx, index, animation) {
+        return index < _data.length
+            ? SizeTransition(
+                sizeFactor: CurvedAnimation(
+                    parent: animation, curve: Curves.linearToEaseOut),
+                child: SingleChildScrollView(
+                  child: TaskCard(
+                    data: _data.elementAt(index),
+                  ).marginOnly(bottom: 15),
+                ),
+              )
+            : _canLoadMoreData
+                ? const CupertinoActivityIndicator()
+                : _data.isEmpty
+                    ? const Text('no data')
+                    : const SizedBox.shrink();
+      },
     );
   }
 }
@@ -500,44 +894,6 @@ class __AddTaskButtonState extends State<_AddTaskButton> {
     return GestureDetector(
       onTap: () {
         NewTaskBottomSheet.open();
-
-        // CoreUtils.BottomSheet.open(
-        //   Column(
-        //     children: [
-        //       Container(
-        //         height: 150,
-        //         width: 200,
-        //         color: Colors.blue,
-        //       ),
-        //       Container(
-        //         height: 150,
-        //         width: 200,
-        //         color: Colors.purple,
-        //       ),
-        //       Container(
-        //         height: 150,
-        //         width: 200,
-        //         color: Colors.green,
-        //       ),
-        //       Container(
-        //         height: 150,
-        //         width: 200,
-        //         color: Colors.blue,
-        //       ),
-        //       Container(
-        //         height: 150,
-        //         width: 200,
-        //         color: Colors.purple,
-        //       ),
-        //       Container(
-        //         height: 150,
-        //         width: 200,
-        //         color: Colors.green,
-        //       )
-        //     ],
-        //   ),
-        //   title: 'test bottom sheet',
-        // );
       },
       onTapDown: (dts) {
         setState(() {
@@ -762,7 +1118,7 @@ class _CategoryCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           color: data.color,
         ),
-        padding: EdgeInsets.all(20),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

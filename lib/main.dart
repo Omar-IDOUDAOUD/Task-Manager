@@ -4,9 +4,10 @@ import 'package:get/get.dart';
 import 'package:task_manager/binding/home_binding.dart';
 import 'package:task_manager/core/constants/colors.dart';
 import 'package:task_manager/view/home.dart';
+import 'package:task_manager/view/test/test.dart';
 
 void main() {
-  WidgetsFlutterBinding.ensureInitialized(); 
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const TaskManger());
 }
 
@@ -14,14 +15,18 @@ class TaskManger extends StatelessWidget {
   const TaskManger({Key? key}) : super(key: key);
   @override
   Widget build(BuildContext context) {
-    
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       getPages: [
         GetPage(
           name: '/home',
           page: () => const Home(),
-          binding: HomeBinding(), 
+          binding: HomeBinding(),
+        ),
+        GetPage(
+          name: '/testing',
+          page: () => const TestScreen(),
+          binding: HomeBinding(),
         ),
       ],
       initialRoute: '/home',

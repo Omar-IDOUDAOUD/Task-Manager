@@ -25,9 +25,9 @@ class CategoryModel {
       productivityPerCentage: map['productivity_percentage'],
       tasksNumber: map['tasks_number'],
       threeLastTasksTitles: [
-        map['last_first_task_title'].toString(),
-        map['last_second_task_title'].toString(),
-        map['last_third_task_title'].toString(), 
+        map['last_first_task_title'],
+        map['last_second_task_title'],
+        map['last_third_task_title'],
       ],
     );
   }
