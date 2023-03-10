@@ -27,6 +27,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
       child: SafeArea(
         bottom: false,
         child: Scaffold(
+        
           extendBodyBehindAppBar: true,
           appBar: TabBar(
             controller: _tabController,
@@ -70,11 +71,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                   color: Get.theme.colorScheme.background,
                   child: TabBarView(
                     controller: _tabController,
-                    children:  [
-                      TasksTab(),
-                      CompletedTab(),
-                     ProfileTab()
-                    ],
+                    children: [TasksTab(), CompletedTab(), ProfileTab()],
                   ),
                 ),
               )

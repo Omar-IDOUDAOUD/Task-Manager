@@ -1,3 +1,4 @@
+
 import 'package:get/get.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
@@ -20,10 +21,10 @@ const String TASKS_TABLE_CREATE_SQLQUERY = """
           FOREIGN KEY (category_id)
           REFERENCES  Categories  (id)
           ON DELETE NO ACTION
-          ON UPDATE NO ACTION);
+          ON UPDATE NO ACTION)
       """;
 const String CATEGORIES_TABLE_CREATE_SQLQUERY = """
-      CREATE TABLE Categories(
+      CREATE TABLE Categories (
         id  INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
         title  TEXT NOT NULL,
         color_code  TEXT  NOT NULL,
@@ -35,7 +36,7 @@ const String CATEGORIES_TABLE_CREATE_SQLQUERY = """
       )
       """;
 const String INITIAL_DATA_INSERTATION_SQLQUERY = """
-      INSERT INTO Categories(title,color_code) VALUES("My Category", 4287758251)
+      INSERT INTO Categories(title,color_code) VALUES("My Category", 4287758251); 
 """;
 
 class SQLiteConnectionService {
@@ -47,7 +48,7 @@ class SQLiteConnectionService {
     return _instance!;
   }
 
-  static const DATABASE_NAME = "TaskManagerSqlDbTestingv48.db";
+  static const DATABASE_NAME = "azezjfhwwwwjersdfsdf.db";
   static const DATABASE_VERSION = 1;
   Database? _db;
 
@@ -55,37 +56,34 @@ class SQLiteConnectionService {
     final initDb = () async => GetPlatform.isDesktop
         ? await _initialDesktopDataBase()
         : await _initialMobileDataBase();
-    if (_db == null)
+    if (_db == null) {
       return initDb();
-    else if (!_db!.isOpen)
+    } else if (!_db!.isOpen) {
       return initDb();
-    else
+    } else {
       return _db;
+    }
   }
 
   void _onCreate(Database db, int version) async {
-    await db.execute(
-        TASKS_TABLE_CREATE_SQLQUERY + CATEGORIES_TABLE_CREATE_SQLQUERY);
-    await db.rawInsert(INITIAL_DATA_INSERTATION_SQLQUERY);
-    print('LOG: database onCreate function executed.');
+      await db.execute(CATEGORIES_TABLE_CREATE_SQLQUERY);
+      await db.execute(TASKS_TABLE_CREATE_SQLQUERY);
+      await db.rawInsert(INITIAL_DATA_INSERTATION_SQLQUERY);
+
   }
 
   Future<Database> _initialMobileDataBase() async {
-    print("LOG: start initialization of mobile database");
-    final String path = join(await getDatabasesPath(), DATABASE_NAME);
-    _db = await openDatabase(path,
-        onCreate: _onCreate, version: DATABASE_VERSION);
-
-    print("LOG: finish initialization of mobile database");
+      final directory = await getDatabasesPath();
+      final String path = join(directory, DATABASE_NAME);
+      _db = await openDatabase(path,
+          onCreate: _onCreate, version: DATABASE_VERSION);
     return _db!;
   }
 
   Future<Database> _initialDesktopDataBase() async {
-    print("LOG: start initialization of desktop database");
     sqfliteFfiInit();
     final String path =
         join(await databaseFactoryFfi.getDatabasesPath(), DATABASE_NAME);
-
     _db = await databaseFactoryFfi.openDatabase(
       path,
       options: OpenDatabaseOptions(
@@ -93,7 +91,6 @@ class SQLiteConnectionService {
         version: DATABASE_VERSION,
       ),
     );
-    print("LOG: finish initialization of desktop database");
     return _db!;
   }
 

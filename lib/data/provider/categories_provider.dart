@@ -18,17 +18,16 @@ class CategoriesProvider extends ModelProvider {
 
   bool _initializing = false;
 
-
   @override
   FutureOr<void> init() async {
     if (isInitialized || _initializing) {
       print('LOG: CategoriesProvider already initialized.');
       return;
     }
-    _initializing = true; 
+    _initializing = true;
     _sqlDbConnector ??= SQLiteConnectionService.instance;
     _db = (await _sqlDbConnector!.db)!;
-    _initializing = false; 
+    _initializing = false;
     print('LOG: CategoriesProvider initialized.');
   }
 
@@ -68,14 +67,14 @@ class CategoriesProvider extends ModelProvider {
     int? offset,
     String? orderBy,
   }) async {
-    final data = await _db!.query(_tableName,
-        where: where,
-        whereArgs: whereArgs,
-        columns: columns,
-        limit: limit,
-        groupBy: groupBy,
-        offset: offset,
-        orderBy: orderBy);
+      final data = await _db!.query(_tableName,
+          where: where,
+          whereArgs: whereArgs,
+          columns: columns,
+          limit: limit,
+          groupBy: groupBy,
+          offset: offset,
+          orderBy: orderBy);
     return data.map((e) => CategoryModel.fromMap(e)).toList();
   }
 }

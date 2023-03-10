@@ -8,7 +8,7 @@ import 'package:task_manager/view/test/test.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const TaskManger());
+    runApp(const TaskManger());
 }
 
 class TaskManger extends StatelessWidget {

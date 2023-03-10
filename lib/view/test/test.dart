@@ -1,5 +1,7 @@
 // ignore_for_file: curly_braces_in_flow_control_structures
 
+import 'dart:math';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
@@ -15,87 +17,116 @@ class TestScreen extends StatefulWidget {
   State<TestScreen> createState() => _TestScreenState();
 }
 
+List<String> Logs = [];
+ValueNotifier<String?> LogViewerNotifier = ValueNotifier(null)
+  ..addListener(() {
+    Logs.add(LogViewerNotifier.value!);
+  });
+
 class _TestScreenState extends State<TestScreen> {
-  // final TasksController _ctrl = Get.find();
-  // final List<TaskModel> _data = [];
-  // final ScrollController _scrollController = ScrollController();
-  // bool _canLoadMoreData = true;
-  // int _paginationOffset = 0;
-
-  // final _mylistkey = GlobalKey<AnimatedListState>();
-  // final _mylist = List.generate(50, (index) => "item $index");
-  // final _mytween = Tween(begin: Offset.zero, end: Offset.zero);
-
-  @override
-  void initState() {
-    // TODO: implement initState
-    // _scrollController.addListener(() {
-    //   if (_canLoadMoreData &&
-    //       _scrollController.offset ==
-    //           _scrollController.position.maxScrollExtent) {
-    //     _loadMoreData();
-    //   }
-    // });
-    // _loadMoreData();
-  }
-
-  int _p = 0;
-
-  _getWidget() {
-    if (_p == 0)
-      return Container(
-        key: ValueKey(_p),
-        height: 50,
-        width: 100,
-        color: Colors.red,
-      );
-    if (_p == 1)
-      return Container(
-        key: ValueKey(_p),
-        height: 100,
-        width: 50,
-        color: Colors.green,
-      );
-    if (_p == 2)
-      return Container(
-        key: ValueKey(_p),
-        height: 80,
-        width: 80,
-        color: Colors.purple,
-      );
-  }
-
-  final ot = Tween(begin: Offset(-1, 0), end: Offset.zero);
-  // final _mytweenoffsetstart = Tween(begin: Offset.zero, end: Offset.zero);
-  // final _mytweenoffsetend = Tween(begin: Offset(1, 0), end: Offset.zero);
+  TasksController _controller = Get.find();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: GestureDetector(
-        onTap: () {
-          setState(() {
-            if (_p == 2) {
-              _p = 0;
-              return;
-            }
-            _p++;
-          });
-        },
-        child: PageView.builder(
-          itemBuilder: (ctx, i) {
-            print('build item $i');
-            return SizedBox.square(
-              dimension: 200,
-              child: ColoredBox(
-                color: Colors.green,
-                child: Center(
-                  child: Text("$i"),
-                ),
+      appBar: AppBar(
+        title: const Text("log viewer"),
+        actions: [
+          IconButton(
+              onPressed: () {
+                Logs.clear();
+                LogViewerNotifier.notifyListeners();
+              },
+              icon: Icon(Icons.cleaning_services_rounded))
+        ],
+      ),
+      body: ColoredBox(
+        color: Colors.blue,
+        child: Column(
+          children: [
+            Expanded(
+              child: ValueListenableBuilder<String?>(
+                valueListenable: LogViewerNotifier,
+                builder: (_, String? log, c) {
+                  // if (log != null) _logList.add(log);
+                  return ListView.builder(
+                    itemCount: Logs.length,
+                    itemBuilder: (_, i) => ListTile(
+                      leading: Icon(
+                        Icons.info_outline_rounded,
+                        color: Colors.white,
+                      ),
+                      title: Text(
+                        Logs.elementAt(i),
+                        style: TextStyle(
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  );
+                },
               ),
-            );
-          },
+            ),
+            Padding(
+              padding: const EdgeInsets.all(15.0),
+              child: Wrap(
+                // mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                alignment: WrapAlignment.center,
+                spacing: 10,
+                runSpacing: 10,
+                children: [
+                  MaterialButton(
+                    color: Colors.white,
+                    child: Text("log tester"),
+                    onPressed: () {
+                      PrintLogOnScreen("test log");
+                    },
+                  ),
+                  MaterialButton(
+                    color: Colors.white,
+                    child: Text("insert task"),
+                    onPressed: () async {
+                      PrintLogOnScreen("Inserting task started");
+                      final d = await _controller.createTask(
+                        TaskModel(
+                          title: 'hhh',
+                          categoryId: 1,
+                          completed: false,
+                          creationDate: DateTime.now(),
+                          completionDate: DateTime.now().add(1.hours),
+                          priority: TaskPriorities.low,
+                          sendAlert: false,
+                          terminationDate: DateTime.now().add(1.hours),
+                          description: 'test desc',
+                        ),
+                      );
+                      PrintLogOnScreen("Inserting task finish");
+                    },
+                  ),
+                  MaterialButton(
+                    color: Colors.white,
+                    child: Text("load taday data"),
+                    onPressed: () async {
+                      PrintLogOnScreen("loding today tasks start");
+                      final d = await _controller.getTodaysTasks(0);
+                      PrintLogOnScreen(
+                          "loding today tasks finish, data: ${d.map((e) => [
+                                e.id,
+                                e.title
+                              ])}");
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
+}
+
+void PrintLogOnScreen(String msg) {
+  final rv = Random.secure().nextInt(1000);
+  LogViewerNotifier.value = "log N: $rv: $msg";
+  // print("-------------->${LogViewerNotifier.value}");
 }

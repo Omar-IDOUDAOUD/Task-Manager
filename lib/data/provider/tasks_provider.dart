@@ -22,7 +22,6 @@ class TasksProvider extends ModelProvider {
   @override
   bool get isInitialized => _db != null ? _db!.isOpen : false;
 
-  
   @override
   Database? get db => _db;
 
@@ -34,11 +33,10 @@ class TasksProvider extends ModelProvider {
       print('LOG: TasksProvider already initialized.');
       return;
     }
-    _initializing = true; 
+    _initializing = true;
     _sqlDbConnector ??= SQLiteConnectionService.instance;
     _db = (await _sqlDbConnector!.db)!;
-    _initializing = false; 
-    print('LOG: TasksProvider initialized.');
+    _initializing = false;
   }
 
   @override
@@ -54,7 +52,8 @@ class TasksProvider extends ModelProvider {
 
   final _tableName = 'Tasks';
   Future<int> createTask(TaskModel data) async {
-    return _db!.insert(_tableName, data.toMap());
+    return 
+     await _db!.insert(_tableName, data.toMap());
   }
 
   Future<int> deleteTask(int id) async {
@@ -77,16 +76,16 @@ class TasksProvider extends ModelProvider {
     int? offset,
     String? orderBy,
   }) async {
-    final data = await _db!.query(
-      _tableName,
-      where: where,
-      whereArgs: whereArgs,
-      columns: columns,
-      limit: limit,
-      offset: offset,
-      groupBy: groupBy,
-      orderBy: orderBy,
-    );
+      final data = await _db!.query(
+        _tableName,
+        where: where,
+        whereArgs: whereArgs,
+        columns: columns,
+        limit: limit,
+        offset: offset,
+        groupBy: groupBy,
+        orderBy: orderBy,
+      );
     return data.map((e) => TaskModel.fromMap(e)).toList();
   }
 }
