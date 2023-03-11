@@ -56,28 +56,28 @@ class TasksController extends GetxController {
   Future<List<TaskModel>> getTodaysTasks(int paginationOffset,
       {int paginationLimit = 10}) async {
     if (paginationOffset == 0 && _todayTasks.isNotEmpty) return _todayTasks;
-    List<TaskModel> paginated_data = [];
-      await _tasksProvider.init();
-      await _categoriesProvider.init();
-      final now = DateTime.now();
-      paginated_data = await _tasksProvider.readTasks(
-        limit: paginationLimit,
-        offset: paginationOffset,
-        orderBy: 'id DESC',
-        where: 'DATE(completion_date) == DATE(?)',
-        whereArgs: [
-          now.toIso8601String(),
-        ],
-      );
-      _todayTasks.addAllIf(_todayTasks.isEmpty, paginated_data);
-    
+    await _tasksProvider.init();
+    await _categoriesProvider.init();
+
+    final now = DateTime.now();
+    final paginated_data = await _tasksProvider.readTasks(
+      limit: paginationLimit,
+      offset: paginationOffset,
+      orderBy: 'id DESC',
+      where: 'DATE(completion_date) == DATE(?) AND completed = ?',
+      whereArgs: [
+        now.toIso8601String(),
+        0,
+      ],
+    );
+    _todayTasks.addAllIf(_todayTasks.isEmpty, paginated_data);
     return paginated_data;
   }
 
   Future _updateTodaysTasksLength() async {
     final now = DateTime.now();
     final l = await _tasksProvider.db!.rawQuery(
-        'SELECT count(`id`) as c from ${_tasksProvider.tableName} WHERE DATE(completion_date) == DATE(?)',
+        'SELECT count(`id`) as c from ${_tasksProvider.tableName} WHERE DATE(completion_date) == DATE(?) AND completed = 0',
         [now.toIso8601String()]);
     todayTasksNumber.value = int.parse(l.first['c'].toString());
   }
@@ -89,6 +89,8 @@ class TasksController extends GetxController {
     final paginated_data = await _tasksProvider.readTasks(
       limit: paginationLimit,
       offset: paginationOffset,
+      where: 'completed = ?',
+      whereArgs: [0],
       orderBy: 'id DESC',
     );
     _allTasks.addAllIf(_allTasks.isEmpty, paginated_data);
@@ -96,8 +98,8 @@ class TasksController extends GetxController {
   }
 
   Future _updateAllTasksLength() async {
-    final l = await _tasksProvider.db!
-        .rawQuery('SELECT count(`id`) as c from `${_tasksProvider.tableName}`');
+    final l = await _tasksProvider.db!.rawQuery(
+        'SELECT count(`id`) as c from `${_tasksProvider.tableName}` WHERE  completed = 0');
     allTasksNumber.value = int.parse(l.first['c'].toString());
   }
 
@@ -144,6 +146,31 @@ class TasksController extends GetxController {
     return paginated_data;
   }
 
+  Future<void> checkTask(int taskId, int listIndex) async {
+    print('tasj checked id: $taskId, index: $listIndex');
+    final checkedTask = await _tasksProvider.readTasks(
+        where: 'id = ?', whereArgs: [taskId]).then((value) => value.first);
+    await _tasksProvider.deleteTask(taskId);
+
+    _updateAllTasksLength();
+    _updateTodaysTasksLength();
+    if (checkedTask.completionDate != null &&
+        checkedTask.completionDate!.day == DateTime.now().day) {
+      onUpdateTodayTasksNotifier.value = TasksUpdateLog(
+          isAddNewTask: false,
+          index: listIndex,
+          task: checkedTask..completed = true);
+    } else {
+      onUpdateAllTasksNotifier.value = TasksUpdateLog(
+          isAddNewTask: false,
+          index: listIndex,
+          task: checkedTask..completed = true);
+    }
+    _todayTasks.clear();
+    _allTasks.clear();
+    _categories.clear();
+  }
+
   Future<List<TaskModel>> getCompletedTasks(int paginationOffset,
       {int paginationLimit = 10}) async {
     if (paginationOffset == 0 && _completedTasks.isNotEmpty)
@@ -162,33 +189,34 @@ class TasksController extends GetxController {
   }
 
   Future<void> createTask(TaskModel data) async {
-      final category = (await _categoriesProvider.readCategories(
-        where: 'id = ?',
-        whereArgs: [data.categoryId],
-        columns: ['title', 'color_code'],
-      ))
-          .first;
-      data
-        ..categoryTitle = category.title
-        ..categoryColor = category.color
-        ..completed = true;
-      final newId = await _tasksProvider.createTask(data);
-      final newTask =
-          (await _tasksProvider.readTasks(where: 'id = ?', whereArgs: [newId]))
-              .first;
-      _updateAllTasksLength();
-      _updateTodaysTasksLength();
-      if (newTask.completionDate != null &&
-          newTask.completionDate!.day == DateTime.now().day) {
-        onUpdateTodayTasksNotifier.value =
-            TasksUpdateLog(isAddNewTask: true, index: 0, task: newTask);
-        _todayTasks.clear();
-      } else {
-        onUpdateAllTasksNotifier.value =
-            TasksUpdateLog(isAddNewTask: true, index: 0, task: newTask);
-      }
-      _allTasks.clear();
-      _categories.clear();
+    final category = (await _categoriesProvider.readCategories(
+      where: 'id = ?',
+      whereArgs: [data.categoryId],
+      columns: ['title', 'color_code'],
+    ))
+        .first;
+    data
+      ..categoryTitle = category.title
+      ..categoryColor = category.color;
+    final newId = await _tasksProvider.createTask(data);
+    final newTask =
+        (await _tasksProvider.readTasks(where: 'id = ?', whereArgs: [newId]))
+            .first;
+    _updateAllTasksLength();
+    _updateTodaysTasksLength();
+    if (newTask.completionDate != null &&
+        newTask.completionDate!.day == DateTime.now().day) {
+      onUpdateTodayTasksNotifier.value =
+          TasksUpdateLog(isAddNewTask: true, index: 0, task: newTask);
+      onUpdateAllTasksNotifier.value =
+          TasksUpdateLog(isAddNewTask: true, index: 0, task: newTask);
+      _todayTasks.clear();
+    } else {
+      onUpdateAllTasksNotifier.value =
+          TasksUpdateLog(isAddNewTask: true, index: 0, task: newTask);
+    }
+    _allTasks.clear();
+    _categories.clear();
   }
 
   Future<List<CategoryIdAndIndex>> getCategoriesTitles() async {

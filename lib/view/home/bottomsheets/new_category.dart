@@ -52,7 +52,6 @@ class _NewCategoryBottomSheetState extends State<NewCategoryBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    print('test success');
     const String prefixTitlesSpace = '    ';
     return Column(
       mainAxisSize: MainAxisSize.min,

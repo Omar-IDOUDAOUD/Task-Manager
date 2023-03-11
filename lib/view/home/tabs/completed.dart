@@ -93,6 +93,9 @@ class _CompletedTabState extends State<CompletedTab> {
                     parent: animation, curve: Curves.linearToEaseOut),
                 child: SingleChildScrollView(
                   child: TaskCard(
+                    onChangeCompletetionState: (isCompleted){
+                      //
+                    },
                     data: _data.elementAt(index),
                   ).marginOnly(bottom: 15),
                 ),

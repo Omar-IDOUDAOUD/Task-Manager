@@ -5,10 +5,54 @@ import 'package:intl/intl.dart';
 import 'package:task_manager/core/constants/colors.dart';
 import 'package:task_manager/data/model/task.dart';
 
-class TaskCard extends StatelessWidget {
-  const TaskCard({Key? key, required this.data}) : super(key: key);
+class TaskCard extends StatefulWidget {
+  const TaskCard(
+      {Key? key,
+      required this.data,
+      required this.onChangeCompletetionState,
+      this.showShadow = false})
+      : super(key: key);
+  // : super(key: key);
+  final Function(bool isCompleted) onChangeCompletetionState;
+  final bool showShadow;
 
   final TaskModel data;
+
+  @override
+  State<TaskCard> createState() => _TaskCardState();
+}
+
+class _TaskCardState extends State<TaskCard>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _animationController;
+  bool _isChecked = false;
+
+  // void startCheckAnimation(){
+
+  // }
+  @override
+  void initState() {
+    print('iiiiiiiiiiiiiiiiiiiiiiiiiiiiii');
+    // TODO: implement initState
+    _isChecked = widget.data.completed!;
+    _animationController = AnimationController(
+        debugLabel: 'constrr',
+             
+        vsync: this,
+        duration: 200.milliseconds,
+        lowerBound: 0.0,
+        upperBound: 1.0)
+      ..addListener(() {
+        setState(() {});
+      });
+  }
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    _animationController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -18,12 +62,14 @@ class TaskCard extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withOpacity(.03),
-              offset: const Offset(0, 20),
-              blurRadius: 50),
-        ],
+        boxShadow: widget.showShadow
+            ? [
+                BoxShadow(
+                    color: Colors.black.withOpacity(.03),
+                    offset: const Offset(0, 20),
+                    blurRadius: 50),
+              ]
+            : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -32,20 +78,49 @@ class TaskCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: Text(
-                  data.title!,
-                  style: Get.theme.textTheme.headline5?.copyWith(
-                    color: Get.theme.colorScheme.primary,
-                    decoration:
-                        data.completed! ? TextDecoration.lineThrough : null,
-                  ),
+                child: Stack(
+                  fit: StackFit.loose,
+                  children: [
+                    Text(
+                      widget.data.title!,
+                      style: Get.theme.textTheme.headline5?.copyWith(
+                        color: Get.theme.colorScheme.primary,
+                      ),
+                    ),
+                    // if (_isChecked)
+                    AnimatedBuilder(
+                      animation: _animationController,
+                      builder: (_, c) {
+                        return SizeTransition(
+                          axis: Axis.horizontal,
+                          sizeFactor: _animationController,
+                          child: c,
+                        );
+                      },
+                      child: Text(
+                        widget.data.title!,
+                        style: TextStyle(
+                          color: Colors.transparent,
+                          decoration: TextDecoration.lineThrough,
+                          decorationColor:
+                              Get.theme.colorScheme.primary.withOpacity(.5),
+                          decorationThickness: 2,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               SizedBox.square(
                 dimension: 20,
                 child: Checkbox(
-                  value: data.completed,
-                  onChanged: (v) => true,
+                  value: _isChecked,
+                  onChanged: (v) {
+                    print(v);
+                    widget.onChangeCompletetionState(v!);
+                    _isChecked = v;
+                    _animationController.forward();
+                  },
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -57,12 +132,16 @@ class TaskCard extends StatelessWidget {
             ],
           ),
           Text(
-            data.description!.isNotEmpty ? data.description! : "No Description",
+            widget.data.description!.isNotEmpty
+                ? widget.data.description!
+                // : "No Description",
+                : widget.data.id.toString(),
             style: Get.theme.textTheme.headline2?.copyWith(
-              color: data.description!.isNotEmpty
+              color: widget.data.description!.isNotEmpty
                   ? Get.theme.colorScheme.secondary
                   : Get.theme.colorScheme.secondary.withOpacity(.5),
-              decoration: data.completed! ? TextDecoration.lineThrough : null,
+              decoration:
+                  widget.data.completed! ? TextDecoration.lineThrough : null,
             ),
           ),
           const SizedBox(
@@ -89,13 +168,14 @@ class TaskCard extends StatelessWidget {
                       color: _getPriorityColor,
                     ),
                   ),
-                  if (data.completionDate != null) ...[
+                  if (widget.data.completionDate != null) ...[
                     Row(
                       children: [
                         Text(
-                          data.completionDate!.day == DateTime.now().day
+                          widget.data.completionDate!.day == DateTime.now().day
                               ? 'Today'
-                              : DateFormat.EEEE().format(data.completionDate!),
+                              : DateFormat.EEEE()
+                                  .format(widget.data.completionDate!),
                           style: Get.theme.textTheme.headline5?.copyWith(
                             color: Get.theme.colorScheme.secondary,
                           ),
@@ -104,7 +184,7 @@ class TaskCard extends StatelessWidget {
                           width: 10,
                         ),
                         Text(
-                          DateFormat.Hm().format(data.completionDate!),
+                          DateFormat.Hm().format(widget.data.completionDate!),
                           style: Get.theme.textTheme.headline5?.copyWith(
                             color: Get.theme.colorScheme.tertiary,
                           ),
@@ -118,7 +198,7 @@ class TaskCard extends StatelessWidget {
               DecoratedBox(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(5),
-                  color: data.categoryColor,
+                  color: widget.data.categoryColor,
                 ),
                 child: Padding(
                   padding:
@@ -133,7 +213,7 @@ class TaskCard extends StatelessWidget {
                       const SizedBox(
                         width: 4,
                       ),
-                      Text(data.categoryTitle!,
+                      Text(widget.data.categoryTitle!,
                           style: TextStyle(
                             fontSize: 10,
                             height: 1,
@@ -152,7 +232,7 @@ class TaskCard extends StatelessWidget {
   }
 
   String get _getPriorityString {
-    switch (data.priority) {
+    switch (widget.data.priority) {
       case TaskPriorities.low:
         return 'Low task';
       case TaskPriorities.medium:
@@ -165,7 +245,7 @@ class TaskCard extends StatelessWidget {
   }
 
   Color get _getPriorityColor {
-    switch (data.priority) {
+    switch (widget.data.priority) {
       case TaskPriorities.low:
         return CstColors.e;
       case TaskPriorities.medium:

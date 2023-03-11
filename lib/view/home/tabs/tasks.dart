@@ -203,6 +203,8 @@ class _TodayTasks extends StatefulWidget {
   State<_TodayTasks> createState() => _TodayTasksState();
 }
 
+bool _TODAY_TASKS_LOADED = false;
+
 class _TodayTasksState extends State<_TodayTasks> {
   final List<TaskModel> _data = [];
   final ScrollController _scrollController = ScrollController();
@@ -216,6 +218,7 @@ class _TodayTasksState extends State<_TodayTasks> {
     super.dispose();
     widget.controller.onUpdateTodayTasksNotifier
         .removeListener(onUpdateListiner);
+    _TODAY_TASKS_LOADED = true;
   }
 
   @override
@@ -244,7 +247,7 @@ class _TodayTasksState extends State<_TodayTasks> {
       if (v.index! < _data.length) _data.removeAt(v.index!);
       widget.controller.todayTasksListKey.currentState!.removeItem(v.index!,
           (_, a) {
-        return SizedBox.shrink();
+        return const SizedBox.shrink();
       }, duration: 900.milliseconds);
     }
   }
@@ -253,6 +256,13 @@ class _TodayTasksState extends State<_TodayTasks> {
     final newData = await widget.controller
         .getTodaysTasks(_paginationOffset, paginationLimit: _paginationLimit);
     _paginationOffset += _paginationLimit;
+
+    // if (_TODAY_TASKS_LOADED){
+    //   setState(() {
+    //     _data.addAll(newData);
+    //   });
+    //   return;
+    // }
 
     newData.forEach((element) {
       _data.add(element);
@@ -287,6 +297,12 @@ class _TodayTasksState extends State<_TodayTasks> {
                     parent: animation, curve: Curves.linearToEaseOut),
                 child: SingleChildScrollView(
                   child: TaskCard(
+                    onChangeCompletetionState: (isCompleted) {
+                      print('onChangeCompletetionState called');
+                      if (isCompleted)
+                        widget.controller
+                            .checkTask(_data.elementAt(index).id!, index);
+                    },
                     data: _data.elementAt(index),
                   ).marginOnly(bottom: 15),
                 ),
@@ -312,7 +328,7 @@ class _AllTasks extends StatefulWidget {
   State<_AllTasks> createState() => _AllTasksState();
 }
 
-class _AllTasksState extends State<_AllTasks> {
+class _AllTasksState extends State<_AllTasks> with TickerProviderStateMixin {
   final List<TaskModel> _data = [];
   final ScrollController _scrollController = ScrollController();
   bool _canLoadMoreData = true;
@@ -323,14 +339,16 @@ class _AllTasksState extends State<_AllTasks> {
   void dispose() {
     // TODO: implement dispose
     super.dispose();
-    widget.controller.onUpdateAllTasksNotifier.removeListener(onUpdateListiner);
+    widget.controller.onUpdateAllTasksNotifier.removeListener(onUpdateListener);
   }
 
   @override
   void initState() {
-    widget.controller.onUpdateAllTasksNotifier.addListener(onUpdateListiner);
+    widget.controller.onUpdateAllTasksNotifier.addListener(onUpdateListener);
     _paginationLimit = (Get.size.height ~/ 150) * 2;
     _scrollController.addListener(() {
+      print('scroll c ontroller calle, kkk');
+      if (!_scrollController.hasClients) return;
       widget.scrollListener(_scrollController.offset);
       if (_canLoadMoreData &&
           _scrollController.offset ==
@@ -341,7 +359,7 @@ class _AllTasksState extends State<_AllTasks> {
     _loadMoreData();
   }
 
-  void onUpdateListiner() {
+  void onUpdateListener() {
     final v = widget.controller.onUpdateAllTasksNotifier.value;
     if (v!.isAddNewTask) {
       _data.insert(0, v.task!);
@@ -349,11 +367,83 @@ class _AllTasksState extends State<_AllTasks> {
           .insertItem(1, duration: 900.milliseconds);
       _paginationOffset++;
     } else {
+      // v.task!.completed = false;
+      final totalAnDuration = 1200.milliseconds;
+      final animation1Controller = AnimationController(
+        vsync: this,
+        duration: totalAnDuration * 0.3,
+      );
+      final animation1 = Tween(begin: 1.0, end: 1.05).animate(CurvedAnimation(
+          parent: animation1Controller, curve: Curves.linearToEaseOut));
+      final animation2Controller =
+          AnimationController(vsync: this, duration: totalAnDuration * 0.3);
+      final animation2 = Tween(begin: Offset.zero, end: const Offset(1, 0))
+          .animate(CurvedAnimation(
+              parent: animation2Controller, curve: Curves.linearToEaseOut));
+      final animation3Controller =
+          AnimationController(vsync: this, duration: totalAnDuration * 0.4);
+      final animation3 = Tween(begin: 1.0, end: 0.0).animate(CurvedAnimation(
+          parent: animation3Controller, curve: Curves.linearToEaseOut));
+      animation1Controller.addStatusListener((status) {
+        // if (status == AnimationStatus.completed) animation1Controller.reverse();
+        if (status == AnimationStatus.completed) {
+          // v.task!.completed = false;
+          animation2Controller.forward();
+          animation1Controller.reverse();
+        }
+      });
+      animation2Controller.addStatusListener((status) {
+        if (status == AnimationStatus.completed) animation3Controller.forward();
+      });
+      // final animation1 = Tween(begin: Offset(1, 0), end: Offset.zero);
       if (v.index! < _data.length) _data.removeAt(v.index!);
-      widget.controller.allTasksListKey.currentState!.removeItem(v.index!,
-          (_, a) {
-        return SizedBox.shrink();
-      }, duration: 900.milliseconds);
+      widget.controller.allTasksListKey.currentState!.removeItem(
+        v.index! + 1,
+        (_, a) {
+          animation1Controller.forward();
+          return ScaleTransition(
+            scale: animation1,
+            child: PhysicalModel(
+              borderRadius: BorderRadius.circular(20),
+              clipBehavior: Clip.hardEdge,
+              color: Colors.transparent,
+              elevation: 30,
+              shadowColor: Colors.black54.withOpacity(.2),
+              child: SizeTransition(
+                axisAlignment: 1,
+                sizeFactor: animation3,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      color: Colors.white,
+                    ),
+                    child: Stack(
+                      children: [
+                        const Positioned.fill(
+                          child: Center(child: Text("Well\nJob") //,
+                              ),
+                        ),
+                        SlideTransition(
+                          position: animation2,
+                          child: TaskCard(
+                            data: v.task!,
+                            onChangeCompletetionState: (bool isCompleted) {},
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ).marginOnly(bottom: 15),
+              ),
+            ),
+          );
+        },
+        duration: totalAnDuration
+          ..delay().then((value) => _scrollController.notifyListeners()),
+      );
+      _paginationOffset--;
     }
   }
 
@@ -378,6 +468,7 @@ class _AllTasksState extends State<_AllTasks> {
   @override
   Widget build(BuildContext context) {
     return AnimatedList(
+      clipBehavior: Clip.none,
       key: widget.controller.allTasksListKey,
       padding: const EdgeInsets.only(top: 70, bottom: 25, left: 25, right: 25),
       controller: _scrollController,
@@ -390,11 +481,25 @@ class _AllTasksState extends State<_AllTasks> {
               .marginOnly(bottom: 20);
         index--;
         return index < _data.length
-            ? SizeTransition(
-                sizeFactor: CurvedAnimation(
-                    parent: animation, curve: Curves.linearToEaseOut),
-                child: SingleChildScrollView(
+            ? PhysicalModel(
+                borderRadius: BorderRadius.circular(20),
+                clipBehavior: Clip.hardEdge,
+                color: Colors.transparent,
+                elevation: 30,
+                shadowColor: Colors.black54.withOpacity(.2),
+                child: SizeTransition(
+                  axisAlignment: 1,
+                  sizeFactor: CurvedAnimation(
+                      parent: animation, curve: Curves.linearToEaseOut),
                   child: TaskCard(
+                    onChangeCompletetionState: (isCompleted) {
+                      print('onChangeCompletetionState called');
+                      _data[index].completed = isCompleted;
+                      if (isCompleted) {
+                        widget.controller
+                            .checkTask(_data.elementAt(index).id!, index);
+                      }
+                    },
                     data: _data.elementAt(index),
                   ).marginOnly(bottom: 15),
                 ),
@@ -830,6 +935,7 @@ class _SpecificCategoryTasksState extends State<_SpecificCategoryTasks> {
                     parent: animation, curve: Curves.linearToEaseOut),
                 child: SingleChildScrollView(
                   child: TaskCard(
+                    onChangeCompletetionState: (isCompleted) {},
                     data: _data.elementAt(index),
                   ).marginOnly(bottom: 15),
                 ),
